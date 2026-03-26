@@ -199,17 +199,6 @@
     <li><div class="step-num">5</div><div class="step-body"><strong>Claim your GRAIN.</strong> If your crop was spared, claim your earnings. Then return to the fields. Or don't - the King taxes the same tomorrow.</div></li>
   </ol>
 
-  <h2>The Anti-Sniper Edict</h2>
-  <p>In the first hours after the Kingdom opens, the King has issued an edict against hasty market speculation. A temporary tax applies to GRAIN sales:</p>
-  <table>
-    <tr><th>Time since founding</th><th>GRAIN sell tax</th><th>Notes</th></tr>
-    <tr><td>Hours 0-2</td><td><span class="tag red">90% confiscated</span></td><td>Early flippers lose nearly everything</td></tr>
-    <tr><td>Hours 2-8</td><td><span class="tag gold">50% confiscated</span></td><td>Still punishing</td></tr>
-    <tr><td>Hour 8 onward</td><td><span class="tag green">Free trade</span></td><td>The King has spoken. Markets open.</td></tr>
-  </table>
-
-  <div class="callout warning"><strong>If you are purchasing GRAIN on the open market:</strong> Wait until hour 8. Those who sell before then face the King's wrath in the form of a confiscatory exit tax.</div>
-
   <h2>Serf Labor</h2>
   <p>Attending to ten crops every 120 seconds is beneath most nobles. Deploy a serf - an automated agent that farms the fields on your behalf, day and night. Your serf never sleeps, never misses a harvest, and will catch every Revolt jackpot while you slumber. See <button class="btn-link" onclick="show('agents',null)">Serf Labor</button> for setup instructions.</p>
 </div>
@@ -290,7 +279,7 @@
 <!-- CASTLES -->
 <div id="castles" class="section">
   <h1>Castles &amp; Keeps</h1>
-  <p class="section-subtitle">Six fortresses. Seize them. Fortify them. Defend them with your life.</p>
+  <p class="section-subtitle">Six fortresses. Seize them. Hold them. Defend them with your life.</p>
 
   <p>Six castles are scattered across the Kingdom, each controlling a region of farmland. Any farmer can attempt to seize a castle by burning sufficient GRAIN - and any farmer currently holding a castle can be displaced by a larger GRAIN burn. Castles are not held by kindness; they are held by force.</p>
 
@@ -308,7 +297,7 @@
   <p style="font-size:13px;color:var(--text-dim)">The garrison formula is: <code>cost = pool × 0.0045 × 30 × 0.90 × 1e18 / lastTWAP</code>. No Chainlink oracle needed - USD cancels out.</p>
 
   <div class="callout warning">
-    <strong>Castles reset on seizure.</strong> When a castle falls to a new lord, their garrison replaces the old one. There is no upgrade system - the only way to hold a castle is to outspend whoever holds it. Seize carefully. Reinforce aggressively. Because someone else is always watching your walls.
+    <strong>Castles reset on seizure.</strong> When a castle falls to a new lord, their garrison replaces the old one. There is no upgrade system - the only way to hold a castle is to outspend whoever holds it. Seize carefully. Someone else is always watching your walls.
   </div>
 
   <p>Active castle warfare - lords seizing, outbidding, and losing their garrison GRAIN - creates continuous burns. The Kingdom rewards those who fight for what they hold.</p>
@@ -498,7 +487,7 @@ citadel.claimIncome()                              <span class="cmt">// pull-pay
   <ul>
     <li><strong>Size for survival:</strong> The Kingdom taxes you whether you win or lose. Plan your capital for at least 48 hours of continuous farming - the early days matter most.</li>
     <li><strong>Early allegiance:</strong> Faction slots fill. Faction bonuses compound. Join your house before the realm fills up. The GRAIN required to join is cheap when GRAIN is cheap.</li>
-    <li><strong>The hour-8 window:</strong> Those purchasing GRAIN directly from the open market should wait until the anti-sniper edict expires at hour 8. Before then, the King's exit tax applies.</li>
+    <li><strong>GRAIN timing:</strong> GRAIN is freely tradeable from launch. The liquidity pool is small early - size your entry accordingly.</li>
   </ul>
 
   <h2>GRAIN</h2>
