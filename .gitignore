@@ -16,6 +16,15 @@ ui-assets/misc-art/*
 !ui-assets/misc-art/wood-mahogany.jpg
 !ui-assets/misc-art/wood-real-photo.jpg
 !ui-assets/misc-art/wood-siding1.jpg
+!ui-assets/misc-art/fantasy-tileset/
+
+!ui-assets/castle-art/
+ui-assets/castle-art/*
+!ui-assets/castle-art/boss-citadel.png
+!ui-assets/castle-art/slavic-citadel-2.png
+!ui-assets/castle-art/tiny-swords-free/
+
+!ui-assets/extracted/
 
 # Never publish
 checkpoint.html
