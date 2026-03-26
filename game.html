@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Kingdom — Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #030703;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 50px 16px;
+}
+/* ── Theme overrides (applied by JS based on ?theme=) ── */
+body.theme-parchment {
+  background: #7a5a28;
+}
+body.theme-stone {
+  background: #1a1a18;
+}
+
+/* Map is the primary element — wood grain is drawn on #wood-canvas (no tiling) */
+.map-wrapper {
+  position: relative;
+  background: #120600; /* fallback while grain canvas renders */
+  /* Decorative frame: inner gold line → dark gap → outer gold → outer dark */
+  border: 5px solid var(--frame-mid, #c88a12);
+  outline: 5px solid var(--frame-dark, #2a1204);
+  box-shadow:
+    0 0 0 14px var(--frame-shadow, #6a3a06),
+    0 0 0 20px var(--frame-light, #d49a18),
+    0 0 0 27px var(--frame-outer, #1a0a02),
+    0 0 60px rgba(0,0,0,0.98),
+    inset 0 0 0 3px var(--frame-inner, #8a5208),
+    inset 0 0 80px rgba(0,0,0,0.22);
+  flex-shrink: 0;
+}
+/* Wood grain canvas — behind everything, no tiling, unique grain per pixel */
+#wood-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+#grid-canvas { display: block; background: transparent; position: relative; z-index: 1; }
+#sprite-layer, #water-canvas, #fire-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  background: transparent;
+  z-index: 2;
+}
+.ui-panel, #title-block, #citadel-container { z-index: 3; }
+
+/* Sprites */
+.map-sprite {
+  position: absolute;
+  image-rendering: pixelated;
+  object-fit: contain;
+  pointer-events: none;
+}
+.sprite-label { display: none; }
+
+/* Tree sway */
+@keyframes treeSway {
+  0%   { transform: rotate(-1.5deg) scaleX(0.98); }
+  50%  { transform: rotate( 1.5deg) scaleX(1.02); }
+  100% { transform: rotate(-1.5deg) scaleX(0.98); }
+}
+.sprite-sway {
+  transform-origin: 50% 100%;
+  animation: treeSway var(--sway-dur, 3.2s) ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+}
+.sprite-siege {
+  filter: brightness(1.15) drop-shadow(0 0 8px #ff6a00) drop-shadow(0 -4px 6px #ffcc00);
+  animation: siegeGlow 0.7s ease-in-out infinite alternate;
+}
+@keyframes siegeGlow {
+  from { filter: brightness(1.1) drop-shadow(0 0 6px #ff4400) drop-shadow(0 -3px 5px #ffaa00); }
+  to   { filter: brightness(1.3) drop-shadow(0 0 14px #ff2200) drop-shadow(0 -6px 10px #ffdd00); }
+}
+
+/* ─── THE KINGDOM title — grey-purple stone plaque on dark wood ─── */
+.kingdom-plaque {
+  background: linear-gradient(180deg, rgb(82,76,86) 0%, rgb(60,56,66) 40%, rgb(72,66,76) 100%);
+  border-top: 2px solid rgba(160,152,170,0.5);
+  border-bottom: 2px solid rgba(20,18,26,0.85);
+  border-left: 3px solid rgba(100,92,108,0.6);
+  border-right: 3px solid rgba(30,28,38,0.7);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.75), inset 0 1px 0 rgba(180,170,190,0.18);
+  padding: 10px 16px 12px;
+  margin-bottom: 12px;
+  display: block;
+}
+.kingdom-emboss {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2.2em;
+  font-weight: 900;
+  color: #f4d060;
+  letter-spacing: 0.06em;
+  /* lit top edge = chiseled gold letters on stone */
+  text-shadow:
+    0 1px 0 rgba(255,220,130,1),
+    0 2px 3px rgba(0,0,0,0.95),
+    0 -1px 0 rgba(20,16,10,0.7),
+    0 5px 14px rgba(0,0,0,0.6);
+  margin-bottom: 2px;
+}
+.kingdom-chain {
+  font-family: 'Cinzel', serif;
+  font-size: 0.54em;
+  color: rgba(210,195,170,0.75);
+  letter-spacing: 0.22em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  margin-bottom: 0;
+}
+.timer-bare {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 38px;
+  color: #f4cc44;
+  text-shadow:
+    0 2px 0 rgba(90,50,0,0.9),
+    0 0 20px rgba(220,160,40,0.3),
+    0 -1px 0 rgba(40,20,0,0.6);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.timer-label-bare {
+  font-family: 'Cinzel', serif;
+  font-size: 0.64em;
+  color: rgba(200,150,60,0.82);
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.75), 0 2px 6px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+}
+.stat-bare {
+  font-family: 'Cinzel', serif;
+  font-size: 0.66em;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.stat-bare .lbl { color: rgba(180,130,55,0.82); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.stat-bare .val { color: #ecc040; text-shadow: 0 1px 3px rgba(0,0,0,0.85); font-weight: 600; }
+.connect-btn-bare {
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid rgba(180,130,50,0.5);
+  border-radius: 4px;
+  padding: 6px 16px;
+  color: #c8a040;
+  font-family: 'Cinzel', serif;
+  font-size: 0.64em;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  pointer-events: all;
+  display: block;
+}
+.connect-btn-bare:hover { border-color: rgba(220,170,70,0.7); color: #f0c848; }
+
+/* ─── UI Panels — tinted wood, not black boxes ─── */
+/* Goal: panels feel carved INTO the wood surface, not pasted on top */
+.ui-panel { font-size: var(--panel-fs, 16px); }
+.ui-panel {
+  position: absolute;
+  background: rgba(4,1,0,0.48);
+  backdrop-filter: brightness(0.62) saturate(0.8);
+  border: 1px solid rgba(130,80,20,0.35);
+  border-radius: 5px;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.30), 0 2px 10px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+.ui-panel .panel-inner {
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Panel positions — expressed as multiples of --cell (set by JS from viewport).
+   MARGIN=24px. Arm right (row4, col17+1) = 24 + 18*cell.
+   Panels: crops+reaper at col 18, factions at col 29 → right edge = col 38 (canvas inner right).
+*/
+:root { --cell: 45px; --panel-fs: 16px; }
+#title-block  { position:absolute; left:24px; top:28px; width:calc(6*var(--cell) + 14px); pointer-events:none; }
+#panel-crops  { left: calc(28px + 18*var(--cell)); top: 24px;                                   width: calc(10*var(--cell)); height: calc(5*var(--cell));  }
+#panel-reaper { left: calc(28px + 18*var(--cell)); top: calc(22px + 5*var(--cell));              width: calc(10*var(--cell)); height: calc(5*var(--cell));  }
+#panel-fcts   { left: calc(24px + 29*var(--cell)); top: 24px;                                   width: calc(9*var(--cell));  height: calc(11*var(--cell)); }
+
+/* Panel typography */
+.panel-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.8em;
+  color: #f0c040;
+  text-align: center;
+  border-bottom: 1px solid #3a2008;
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(240,192,64,0.3);
+  flex-shrink: 0;
+}
+.panel-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72em;
+  border-bottom: 1px solid rgba(58,32,8,0.3);
+}
+.panel-stat .lbl { color: #7a6030; }
+.panel-stat .val { color: #f0c040; font-weight: 600; }
+
+/* ─── THE KINGDOM title (in top-left panel) ─── */
+.kingdom-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.5em;
+  font-weight: 900;
+  color: #f0c040;
+  text-align: center;
+  text-shadow: 0 0 20px rgba(240,192,64,0.5), 0 2px 4px rgba(0,0,0,0.9);
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.kingdom-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65em;
+  color: #7a6030;
+  text-align: center;
+  letter-spacing: 0.25em;
+  margin-bottom: 10px;
+}
+
+/* ─── Round timer ─── */
+.round-timer {
+  text-align: center;
+  margin: 8px 0;
+}
+.timer-value {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2.2em;
+  color: #f0c040;
+  text-shadow: 0 0 16px rgba(240,192,64,0.4);
+  line-height: 1;
+}
+.timer-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6em;
+  color: #5a4020;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 2px;
+}
+
+/* ─── Crop betting (top-right panel) ─── */
+.crop-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  flex-shrink: 0;
+}
+.crop-btn {
+  background: rgba(16,6,1,0.55);
+  border: 1px solid rgba(90,50,10,0.5);
+  border-radius: 4px;
+  padding: 6px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.12s;
+  color: #c8b888;
+  font-family: 'Cinzel', serif;
+  font-size: 0.56em;
+}
+.crop-btn:hover {
+  border-color: rgba(200,160,60,0.6);
+  background: rgba(30,12,2,0.65);
+}
+.crop-btn.selected {
+  border-color: #f0c040;
+  box-shadow: 0 0 12px rgba(240,192,64,0.35);
+  background: rgba(40,18,4,0.75);
+}
+.crop-btn img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+.crop-btn .cname { color: #c0a060; font-size: 1em; line-height: 1.1; }
+
+/* ── Winning / losing crop animations ───────────────────────────────── */
+@keyframes cropWin {
+  0%   { box-shadow: 0 0 0 rgba(255,220,60,0); transform: scale(1); }
+  30%  { box-shadow: 0 0 28px 8px rgba(255,220,60,0.9); transform: scale(1.13); }
+  60%  { box-shadow: 0 0 18px 4px rgba(255,180,20,0.7); transform: scale(1.08); }
+  100% { box-shadow: 0 0 14px 3px rgba(255,180,20,0.5); transform: scale(1.05); }
+}
+@keyframes cropBurn {
+  0%   { filter: none; opacity: 1; }
+  20%  { filter: sepia(1) hue-rotate(-20deg) brightness(1.4); opacity: 0.85; }
+  60%  { filter: sepia(1) hue-rotate(-30deg) brightness(0.7) grayscale(0.4); opacity: 0.55; }
+  100% { filter: sepia(1) hue-rotate(-40deg) brightness(0.4) grayscale(0.7); opacity: 0.35; }
+}
+@keyframes cropRevive {
+  0%   { filter: sepia(1) grayscale(0.7) brightness(0.4); opacity: 0.35; }
+  100% { filter: none; opacity: 1; }
+}
+.crop-btn.crop-winner {
+  border-color: #f0c040;
+  background: rgba(60,30,0,0.85);
+  animation: cropWin 0.6s ease-out forwards;
+  z-index: 2;
+}
+.crop-btn.crop-loser {
+  animation: cropBurn 1.2s ease-in forwards;
+  border-color: rgba(60,20,0,0.3);
+  cursor: default;
+}
+.crop-btn.crop-revive {
+  animation: cropRevive 0.8s ease-out forwards;
+}
+
+.deploy-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+.deploy-input {
+  flex: 1;
+  background: #120700;
+  border: 1.5px solid #3a2008;
+  border-radius: 4px;
+  padding: 7px 8px;
+  color: #f0c040;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78em;
+}
+.deploy-input:focus { outline: none; border-color: #f0c040; }
+.deploy-btn {
+  background: linear-gradient(180deg, #5a3010 0%, #3a1808 100%);
+  border: 1.5px solid #8a5020;
+  border-radius: 4px;
+  padding: 7px 16px;
+  color: #f0c040;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.72em;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+}
+.deploy-btn:hover { background: linear-gradient(180deg, #6a3818 0%, #4a2010 100%); }
+
+/* ─── Bottom panels ─── */
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Cinzel', serif;
+  font-size: 0.82em;
+  flex: 1;
+}
+.mini-table th {
+  color: #7a6030;
+  text-transform: uppercase;
+  font-size: 0.88em;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: 5px 6px;
+  border-bottom: 1px solid #2a1408;
+}
+.mini-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(40,20,5,0.3);
+}
+.mini-table .mono { color: #a08040; font-family: monospace; font-size: 0.85em; }
+.mini-table .gold { color: #f0c040; text-align: right; }
+.mini-table .grey { color: #5a4020; }
+
+.hoard-bar { height: 6px; background: #120700; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+.hoard-fill { height: 100%; background: linear-gradient(90deg, #6a1008, #c03018, #f0c040); border-radius: 3px; }
+
+.castle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+}
+.castle-slot {
+  background: rgba(10,4,0,0.45);
+  border: 1px solid rgba(80,40,10,0.4);
+  border-radius: 4px;
+  padding: 8px 6px;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72em;
+}
+.castle-slot.held { border-color: #7a4018; }
+.castle-slot.protected { border-color: #4488ee; background: rgba(10,20,50,0.5); }
+.castle-slot .tier { color: #5a3010; text-transform: uppercase; font-size: 0.9em; }
+.castle-slot .holder { color: #f0c040; font-family: monospace; font-size: 0.95em; }
+.castle-slot .pct { color: #7a5020; }
+.castle-slot.open .holder { color: #2a5a2a; }
+
+.wallet-btn {
+  position: absolute;
+  right: 16px; bottom: 16px;
+  background: linear-gradient(180deg, #5a3010 0%, #3a1808 100%);
+  border: 2px solid #8a5020;
+  border-radius: 20px;
+  padding: 8px 20px;
+  color: #f0c040;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8em;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+}
+</style>
+</head>
+<body>
+<div class="map-wrapper" id="map-wrapper">
+  <!-- Wood grain fills the full wrapper — no tiling, every pixel unique -->
+  <canvas id="wood-canvas"></canvas>
+  <canvas id="grid-canvas"></canvas>
+  <canvas id="water-canvas"></canvas>
+  <div id="sprite-layer"></div>
+  <canvas id="fire-canvas"></canvas>
+
+  <!-- ═══ THE KINGDOM — standalone embossed title, no box ═══ -->
+  <div id="title-block">
+    <div class="kingdom-plaque">
+      <div class="kingdom-emboss">👑 THE KINGDOM</div>
+      <div class="kingdom-chain">ON BASE · $GRAIN</div>
+    </div>
+    <!-- Stats backing: semi-transparent so they're readable on dark wood -->
+    <div style="background:rgba(10,4,1,0.62);border:1px solid rgba(80,50,10,0.3);border-radius:4px;padding:8px 12px;box-shadow:inset 0 0 14px rgba(0,0,0,0.4);">
+      <div style="text-align:center;margin-bottom:6px">
+        <div class="timer-bare" id="timer-val">2:00</div>
+        <div class="timer-label-bare">Round <span id="round-num">—</span></div>
+      </div>
+      <div class="stat-bare"><span class="lbl">Pool</span><span class="val" id="pool-val">— ETH</span></div>
+      <div class="stat-bare"><span class="lbl">GRAIN Price</span><span class="val" id="price-val">—</span></div>
+      <div class="stat-bare"><span class="lbl">Your GRAIN</span><span class="val" id="your-grain">—</span></div>
+      <div class="stat-bare"><span class="lbl">Your ETH</span><span class="val" id="your-eth">—</span></div>
+      <button class="connect-btn-bare" onclick="connectWallet()" style="width:100%;margin-top:8px">⚡ Connect Wallet</button>
+    </div>
+  </div>
+
+  <!-- ═══ CROPS MODULE (separate panel) ═══ -->
+  <div class="ui-panel" id="panel-crops">
+    <div class="panel-inner">
+      <div class="panel-title" style="font-size:0.72em">🌾 Plant a Crop</div>
+      <div class="crop-grid" id="crop-grid"></div>
+      <div class="deploy-row" style="margin-top:8px">
+        <input type="text" class="deploy-input" placeholder="ETH" value="0.001" id="deploy-amount" style="max-width:90px">
+        <button class="deploy-btn" onclick="deployToCrop()">⚔ Deploy</button>
+        <button class="deploy-btn" style="background:rgba(10,20,10,0.6);border-color:rgba(40,100,40,0.5);color:#8f8" onclick="boostCrop()">⬆ Boost</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FACTIONS MODULE (stacked below crops) ═══ -->
+  <div class="ui-panel" id="panel-fcts">
+    <div class="panel-inner">
+      <div class="panel-title" style="font-size:0.9em">⚔️ Factions</div>
+      <table class="mini-table" id="faction-table">
+        <thead><tr>
+          <th>Faction</th>
+          <th style="text-align:right">ETH</th>
+          <th style="text-align:right">Serfs</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span style="color:#c02030">■</span> <span style="color:#ddc88a">Burgundy</span></td><td class="gold" style="text-align:right">—</td><td class="gold" style="text-align:right">—</td></tr>
+          <tr><td><span style="color:#4488ee">■</span> <span style="color:#ddc88a">Orléans</span></td><td class="gold" style="text-align:right">—</td><td class="gold" style="text-align:right">—</td></tr>
+          <tr><td><span style="color:#30b040">■</span> <span style="color:#ddc88a">Armagnac</span></td><td class="gold" style="text-align:right">—</td><td class="gold" style="text-align:right">—</td></tr>
+          <tr><td><span style="color:#d08030">■</span> <span style="color:#ddc88a">Bourbon</span></td><td class="gold" style="text-align:right">—</td><td class="gold" style="text-align:right">—</td></tr>
+        </tbody>
+      </table>
+      <div style="border-top:1px solid rgba(80,40,10,0.4);margin:8px 0 5px"></div>
+      <div class="panel-title" style="font-size:0.8em;margin-top:4px">🏯 Castles</div>
+      <div class="castle-grid">
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+        <div class="castle-slot open"><div class="tier">Open</div><div class="holder">OPEN</div><div class="pct">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REAPER + HOARD + REAPER RACE ═══ -->
+  <div class="ui-panel" id="panel-reaper">
+    <div class="panel-inner">
+
+      <!-- Hoard section -->
+      <div class="panel-title" style="font-size:0.72em">💰 Royal Hoard</div>
+      <div style="font-family:'Cinzel',serif;font-size:0.65em;margin-bottom:4px;display:flex;align-items:baseline;gap:8px">
+        <span style="color:#c04020">👑 <span id="reaper-name">—</span></span>
+        <span style="color:#a08040"><span id="reaper-grain">—</span> GRAIN</span>
+        <span style="color:#5a4020;font-size:0.88em">· <span id="reaper-time">—</span> left · <span id="reaper-prize" style="color:#c08030">—</span></span>
+      </div>
+      <div style="font-family:'Cinzel',serif;font-size:0.62em;color:#8a7040;margin-bottom:3px">
+        Hoard: <span style="color:#f0c040" id="hoard-val">1,847,293</span><span style="color:#5a4020"> / 2,000,000</span>
+      </div>
+      <div class="hoard-bar"><div class="hoard-fill" id="hoard-fill" style="width:0%"></div></div>
+      <div id="hoard-pct-text" style="font-family:'Cinzel',serif;font-size:0.53em;color:#7a6030;margin-top:3px">— charged</div>
+
+      <!-- Divider -->
+      <div style="border-top:1px solid rgba(80,40,10,0.4);margin:8px 0 6px"></div>
+
+      <!-- Reaper Race — horizontal top 3 -->
+      <div class="panel-title" style="font-size:0.68em;margin-bottom:6px">⚔️ Reaper Race</div>
+      <div style="display:flex;gap:8px" id="reaper-race">
+        <div id="race-card-0" style="flex:1;background:rgba(10,4,0,0.45);border:1px solid rgba(180,140,30,0.35);border-radius:4px;padding:6px 8px;text-align:center;font-family:'Cinzel',serif">
+          <div style="font-size:1.1em;line-height:1">🥇</div>
+          <div class="race-addr" style="font-size:0.58em;color:#f0c040;font-family:monospace;margin:3px 0">—</div>
+          <div class="race-grain" style="font-size:0.62em;color:#f0c040;font-weight:600">—</div>
+          <div style="font-size:0.5em;color:#7a6030;letter-spacing:0.05em">GRAIN</div>
+        </div>
+        <div id="race-card-1" style="flex:1;background:rgba(10,4,0,0.45);border:1px solid rgba(120,120,120,0.25);border-radius:4px;padding:6px 8px;text-align:center;font-family:'Cinzel',serif">
+          <div style="font-size:1.1em;line-height:1">🥈</div>
+          <div class="race-addr" style="font-size:0.58em;color:#ddc88a;font-family:monospace;margin:3px 0">—</div>
+          <div class="race-grain" style="font-size:0.62em;color:#ddc88a;font-weight:600">—</div>
+          <div style="font-size:0.5em;color:#7a6030;letter-spacing:0.05em">GRAIN</div>
+        </div>
+        <div id="race-card-2" style="flex:1;background:rgba(10,4,0,0.45);border:1px solid rgba(100,60,20,0.25);border-radius:4px;padding:6px 8px;text-align:center;font-family:'Cinzel',serif">
+          <div style="font-size:1.1em;line-height:1">🥉</div>
+          <div class="race-addr" style="font-size:0.58em;color:#c0a870;font-family:monospace;margin:3px 0">—</div>
+          <div class="race-grain" style="font-size:0.62em;color:#c0a870;font-weight:600">—</div>
+          <div style="font-size:0.5em;color:#7a6030;letter-spacing:0.05em">GRAIN</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Citadel is now a placed sprite from the map editor (boss-citadel.png) -->
+
+</div>
+
+<script>
+// ══ MAP RENDERING — same engine as map builder ══════════════════════════
+
+const COLS = 38, ROWS = 26;
+const MARGIN = 24;
+// Dynamic cell size — fit map to viewport before drawing anything
+// Overhead = body padding(100) + frame border/outline/shadow(84) = 184px
+function calcCell() {
+  const params = new URLSearchParams(location.search);
+  const forced = parseInt(params.get('cell'));
+  if (forced >= 20 && forced <= 70) return forced;
+  const cellH = Math.floor((window.innerHeight - 184) / ROWS);
+  const cellW = Math.floor((window.innerWidth  - 184) / (COLS + 11));
+  return Math.max(22, Math.min(45, Math.min(cellH, cellW)));
+}
+let CELL = calcCell();
+document.documentElement.style.setProperty('--cell', CELL + 'px');
+// --panel-fs stays fixed at 16px regardless of CELL (fonts are tuned for CELL=45 baseline)
+
+const rowBounds = [
+  [-1,-1],[-1,-1],
+  [11,11],[10,11],[9,17],[9,15],[8,14],[7,14],[7,14],[6,14],
+  [6,23],[6,27],[6,31],[3,34],[1,36],
+  [0,37],[0,37],[0,37],[0,37],[0,37],
+  [1,37],[3,35],[6,33],[10,30],[13,27],[16,24],
+];
+const voidCells  = new Set();
+const addedCells = new Set();
+const terrainGrid = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+let placedSprites = [];
+
+function cellKey(r,c) { return `${r},${c}`; }
+function cellInBounds(r,c) {
+  if (r<0||r>=ROWS||c<0||c>=COLS) return false;
+  if (addedCells.has(cellKey(r,c))) return true;
+  if (voidCells.has(cellKey(r,c))) return false;
+  const b=rowBounds[r]; if(!b||b[0]<0) return false;
+  return c>=b[0]&&c<=b[1];
+}
+function colLabel(i){return String.fromCharCode(65+i);}
+function rowLabel(i){return String(i+1);}
+function cellToPixel(c,r){return{x:MARGIN+c*CELL,y:MARGIN+r*CELL};}
+function pixelToCell(px,py){
+  const c=Math.floor((px-MARGIN)/CELL),r=Math.floor((py-MARGIN)/CELL);
+  if(c<0||c>=COLS||r<0||r>=ROWS) return null;
+  return{c,r};
+}
+function terrainMask(r,c,type){
+  const pathFamily=['road','dirt'];
+  const isPath=pathFamily.includes(type);
+  const compatible=nt=>nt===type||(isPath&&pathFamily.includes(nt));
+  let mask=0;
+  const isForest=type==='forest';
+  const edgeN=!isForest&&r===0, edgeS=!isForest&&r===ROWS-1;
+  const edgeE=!isForest&&c===COLS-1, edgeW=!isForest&&c===0;
+  if(edgeN||(r>0&&compatible(terrainGrid[r-1][c]))) mask|=1;
+  if(edgeE||(c<COLS-1&&compatible(terrainGrid[r][c+1]))) mask|=2;
+  if(edgeS||(r<ROWS-1&&compatible(terrainGrid[r+1][c]))) mask|=4;
+  if(edgeW||(c>0&&compatible(terrainGrid[r][c-1]))) mask|=8;
+  return mask;
+}
+
+// Canvas elements
+const canvas     = document.getElementById('grid-canvas');
+const ctx        = canvas.getContext('2d');
+const wrapper    = document.getElementById('map-wrapper');
+const spriteLayer= document.getElementById('sprite-layer');
+const waterCanvas= document.getElementById('water-canvas');
+const waterCtx   = waterCanvas.getContext('2d');
+const fireCanvas = document.getElementById('fire-canvas');
+const fireCtx    = fireCanvas.getContext('2d');
+
+let grassPattern=null, cliffTileImg=null;
+
+function initGrid(){
+  canvas.width=COLS*CELL+MARGIN*2;
+  canvas.height=ROWS*CELL+MARGIN*2;
+  // border: 5px is included in border-box sizing → add 10px so content area = canvas size
+  wrapper.style.width=(canvas.width+10)+'px';
+  wrapper.style.height=(canvas.height+10)+'px';
+  wrapper.style.overflow='visible';
+  spriteLayer.style.width=canvas.width+'px';
+  spriteLayer.style.height=canvas.height+'px';
+  waterCanvas.width=canvas.width; waterCanvas.height=canvas.height;
+  fireCanvas.width=canvas.width;  fireCanvas.height=canvas.height;
+}
+
+function loadGrassPattern(){
+  return new Promise(res=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      const tc=document.createElement('canvas');
+      tc.width=CELL;tc.height=CELL;
+      const tctx=tc.getContext('2d');
+      tctx.imageSmoothingEnabled=false;
+      tctx.drawImage(img,0,0,CELL,CELL);
+      grassPattern=ctx.createPattern(tc,'repeat');
+      res();
+    };
+    img.onerror=()=>{grassPattern=null;res();};
+    img.src='ui-assets/grass-art/grass-plus/tile_r0_c4.png';
+  });
+}
+function loadCliffTile(){
+  return new Promise(res=>{
+    cliffTileImg=new Image();
+    cliffTileImg.onload=()=>res();
+    cliffTileImg.onerror=()=>{cliffTileImg=null;res();};
+    cliffTileImg.src='ui-assets/misc-art/lpc-cliff-final/mid_r099_c121.png';
+  });
+}
+
+function drawGrid(){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // Void cells stay transparent — wood grain from map-wrapper background shows through
+
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cx=MARGIN+c*CELL,cy=MARGIN+r*CELL;
+      if(cellInBounds(r,c)){
+        ctx.fillStyle='#3d7a22';
+        ctx.fillRect(cx,cy,CELL,CELL);
+        if(grassPattern){ctx.fillStyle=grassPattern;ctx.fillRect(cx,cy,CELL,CELL);}
+      }
+      // void cells: no fill — transparent so wood background shows through
+    }
+  }
+
+  // Cliff shadows
+  const shadowH=Math.max(4,Math.round(CELL*0.28));
+  const shadowW=Math.max(3,Math.round(CELL*0.22));
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      if(!cellInBounds(r,c)) continue;
+      const cx=MARGIN+c*CELL,cy=MARGIN+r*CELL;
+      if(!cellInBounds(r-1,c)){
+        const g=ctx.createLinearGradient(cx,cy,cx,cy+shadowH);
+        g.addColorStop(0,'rgba(0,0,0,0.55)');g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g;ctx.fillRect(cx,cy,CELL,shadowH);
+      }
+      if(!cellInBounds(r,c-1)){
+        const g=ctx.createLinearGradient(cx,cy,cx+shadowW,cy);
+        g.addColorStop(0,'rgba(0,0,0,0.45)');g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g;ctx.fillRect(cx,cy,shadowW,CELL);
+      }
+    }
+  }
+
+  // Terrain layer
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const t=terrainGrid[r][c];
+      if(!t) continue;
+      if(!cellInBounds(r,c)) continue;
+      const x=MARGIN+c*CELL,y=MARGIN+r*CELL;
+      const mask=terrainMask(r,c,t);
+      const hasN=!!(mask&1),hasS=!!(mask&4),hasE=!!(mask&2),hasW=!!(mask&8);
+      const RW=Math.round(CELL/3),RO=Math.round(CELL/3),RS=CELL-RO-RW;
+      const seed=(c*1009+r*37+7919);
+      const rng=(n)=>((seed*(n*1301+1))>>>0)%1000/1000;
+
+      if(t==='road'){
+        ctx.fillStyle='#888878';
+        ctx.fillRect(x+RO,y+RO,RW,RW);
+        if(hasN) ctx.fillRect(x+RO,y,RW,RO);
+        if(hasS) ctx.fillRect(x+RO,y+RO+RW,RW,RS);
+        if(hasE) ctx.fillRect(x+RO+RW,y+RO,RS,RW);
+        if(hasW) ctx.fillRect(x,y+RO,RO,RW);
+        ctx.strokeStyle='rgba(50,50,40,0.45)';ctx.lineWidth=1;
+        const jStep=Math.max(5,Math.round(RW/3));
+        for(let j=jStep;j<RW-1;j+=jStep){
+          ctx.beginPath();ctx.moveTo(x+RO,y+RO+j);ctx.lineTo(x+RO+RW,y+RO+j);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(x+RO+j,y+RO);ctx.lineTo(x+RO+j,y+RO+RW);ctx.stroke();
+        }
+      } else if(t==='dirt'){
+        ctx.fillStyle='#9A7035';
+        ctx.fillRect(x+RO,y+RO,RW,RW);
+        if(hasN) ctx.fillRect(x+RO,y,RW,RO);
+        if(hasS) ctx.fillRect(x+RO,y+RO+RW,RW,RS);
+        if(hasE) ctx.fillRect(x+RO+RW,y+RO,RS,RW);
+        if(hasW) ctx.fillRect(x,y+RO,RO,RW);
+        if(grassPattern) ctx.fillStyle=grassPattern; else ctx.fillStyle='#2d6a1e';
+        if(!hasN) for(let i=0;i<4;i++){ctx.fillRect(x+RO+Math.round(rng(i)*(RW-3)),y+RO,2,1+Math.round(rng(i+10)*3));}
+        if(!hasS) for(let i=0;i<4;i++){const nh=1+Math.round(rng(i+20)*3);ctx.fillRect(x+RO+Math.round(rng(i+20)*(RW-3)),y+RO+RW-nh,2,nh);}
+        if(!hasW) for(let i=0;i<4;i++){ctx.fillRect(x+RO,y+RO+Math.round(rng(i+40)*(RW-3)),1+Math.round(rng(i+50)*3),2);}
+        if(!hasE) for(let i=0;i<4;i++){const nw=1+Math.round(rng(i+60)*3);ctx.fillRect(x+RO+RW-nw,y+RO+Math.round(rng(i+60)*(RW-3)),nw,2);}
+        ctx.fillStyle='rgba(70,45,15,0.35)';
+        for(let i=0;i<5;i++) ctx.fillRect(x+RO+Math.round(rng(i+80)*(RW-2)),y+RO+Math.round(rng(i+90)*(RW-2)),2,2);
+      } else if(t==='water'){
+        ctx.fillStyle='#2e6bb8'; ctx.fillRect(x,y,CELL,CELL);
+        if(hasN&&hasS&&hasE&&hasW){ctx.fillStyle='#2560a8';ctx.fillRect(x+4,y+4,CELL-8,CELL-8);}
+        ctx.fillStyle='rgba(120,190,255,0.26)';
+        ctx.fillRect(x+Math.round(rng(5)*CELL*0.55),y+Math.round(rng(6)*CELL*0.55),Math.round(CELL*0.28+rng(7)*CELL*0.1),Math.round(CELL*0.14+rng(8)*CELL*0.06));
+        ctx.fillStyle='rgba(160,210,255,0.18)';
+        ctx.fillRect(x+Math.round(rng(9)*CELL*0.5+CELL*0.1),y+Math.round(rng(10)*CELL*0.5+CELL*0.1),Math.round(CELL*0.18+rng(11)*CELL*0.08),Math.round(CELL*0.1+rng(12)*CELL*0.05));
+        ctx.fillStyle='rgba(20,50,120,0.55)';
+        if(!hasN) ctx.fillRect(x,y,CELL,3);
+        if(!hasS) ctx.fillRect(x,y+CELL-3,CELL,3);
+        if(!hasW) ctx.fillRect(x,y,3,CELL);
+        if(!hasE) ctx.fillRect(x+CELL-3,y,3,CELL);
+        ctx.fillStyle='rgba(160,220,255,0.2)';
+        if(!hasN) ctx.fillRect(x+3,y+3,CELL-6,2);
+        if(!hasW) ctx.fillRect(x+3,y+3,2,CELL-6);
+      } else if(t==='farm'){
+        ctx.fillStyle='#7a5028'; ctx.fillRect(x,y,CELL,CELL);
+        ctx.fillStyle='rgba(160,110,55,0.45)';
+        const rowSpacing=Math.max(4,Math.round(CELL/8));
+        for(let ry=rowSpacing;ry<CELL;ry+=rowSpacing*2) ctx.fillRect(x,y+ry,CELL,rowSpacing-1);
+        ctx.fillStyle='rgba(40,20,5,0.25)';
+        if(!hasN) ctx.fillRect(x,y,CELL,2);
+        if(!hasS) ctx.fillRect(x,y+CELL-2,CELL,2);
+        if(!hasW) ctx.fillRect(x,y,2,CELL);
+        if(!hasE) ctx.fillRect(x+CELL-2,y,2,CELL);
+      } else if(t==='cliff'){
+        if(cliffTileImg&&cliffTileImg.complete){
+          ctx.imageSmoothingEnabled=false;
+          ctx.drawImage(cliffTileImg,x,y,CELL,CELL);
+          ctx.imageSmoothingEnabled=true;
+        } else { ctx.fillStyle='#6a5040'; ctx.fillRect(x,y,CELL,CELL); }
+      } else if(t==='forest'){
+        ctx.fillStyle='#1a3a12'; ctx.fillRect(x,y,CELL,CELL);
+        ctx.fillStyle='#2a5a1a';
+        const fw=Math.round(CELL*0.38);
+        ctx.fillRect(x+3,y+3,fw,fw); ctx.fillRect(x+CELL-fw-3,y+CELL-fw-3,fw,fw);
+        ctx.fillStyle='#122a0c';
+        const sc=Math.round(CELL*0.3),so=Math.round(CELL*0.35);
+        ctx.fillRect(x+so,y+so,sc,sc);
+      }
+    }
+  }
+  // (no grid border line)
+}
+
+// ── Sprites ──────────────────────────────────────────────────────────────
+function placeSprite(def,col,row){
+  const{x,y}=cellToPixel(col,row);
+  const scale=def.scale||1.0;
+  const displaySize=Math.round(CELL*scale);
+  const el=document.createElement('img');
+  el.src=def.src; el.className='map-sprite';
+  el.style.cssText=`width:${displaySize}px;height:${displaySize}px;left:${x+CELL/2-displaySize/2}px;top:${y+CELL/2-displaySize/2}px`;
+  const isTree=/tree|bush/i.test(def.name);
+  if(isTree){
+    el.classList.add('sprite-sway');
+    el.style.setProperty('--sway-dur',(2.8+Math.random()*1.8).toFixed(2)+'s');
+    el.style.setProperty('--sway-delay',-(Math.random()*3).toFixed(2)+'s');
+  }
+  // Detect crop tiles so updateCropStages() can animate them in the field
+  const cropMatch = def.src.match(/growing-crops\/(.+?)_(?:seed|sprout|growing|mature)\.png/);
+  const labelEl=document.createElement('div');
+  labelEl.className='sprite-label';
+  const data={el,labelEl,def,col,row,siege:false,cropId:cropMatch?cropMatch[1]:null};
+  placedSprites.push(data);
+  spriteLayer.appendChild(el);
+  spriteLayer.appendChild(labelEl);
+}
+function redrawSprites(){
+  placedSprites.forEach(data=>{
+    const{x,y}=cellToPixel(data.col,data.row);
+    const scale=data.def.scale||1.0;
+    const displaySize=Math.round(CELL*scale);
+    data.el.style.width=displaySize+'px';data.el.style.height=displaySize+'px';
+    data.el.style.left=(x+CELL/2-displaySize/2)+'px';
+    data.el.style.top=(y+CELL/2-displaySize/2)+'px';
+  });
+}
+
+// ── Load state — localStorage first, fallback to kingdom-map-save.json ───
+function applyMapData(d){
+  if(d.terrain){const t=d.terrain;for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(t[r]&&t[r][c]!==undefined) terrainGrid[r][c]=t[r][c];}
+  if(d.voidCells) d.voidCells.forEach(k=>voidCells.add(k));
+  if(d.addedCells) d.addedCells.forEach(k=>addedCells.add(k));
+  if(d.sprites) d.sprites.forEach(s=>placeSprite(s.def,s.col,s.row));
+}
+async function loadState(){
+  try{
+    const sp=localStorage.getItem('km_sprites');
+    if(sp && JSON.parse(sp).length > 0){
+      const terrain=localStorage.getItem('km_terrain');
+      if(terrain){const t=JSON.parse(terrain);for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(t[r]&&t[r][c]!==undefined) terrainGrid[r][c]=t[r][c];}
+      const vd=localStorage.getItem('km_void'); if(vd) JSON.parse(vd).forEach(k=>voidCells.add(k));
+      const ad=localStorage.getItem('km_added'); if(ad) JSON.parse(ad).forEach(k=>addedCells.add(k));
+      JSON.parse(sp).forEach(s=>placeSprite(s.def,s.col,s.row));
+    } else {
+      const resp = await fetch('kingdom-map-save.json');
+      const d = await resp.json();
+      applyMapData(d);
+    }
+  }catch(e){console.warn('loadState failed:',e);}
+}
+
+// ── Water shimmer animation ───────────────────────────────────────────────
+let waterTime=0;
+function animateWater(){
+  requestAnimationFrame(animateWater);
+  waterTime+=0.018;
+  waterCtx.clearRect(0,0,waterCanvas.width,waterCanvas.height);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(terrainGrid[r][c]!=='water'||!cellInBounds(r,c)) continue;
+    const{x,y}=cellToPixel(c,r);
+    for(let i=0;i<3;i++){
+      const phase=(waterTime*28+i*(CELL/3)+r*7+c*3)%CELL;
+      const alpha=0.09+0.07*Math.sin(waterTime*2+i+c*0.4);
+      waterCtx.fillStyle=`rgba(120,200,255,${alpha.toFixed(3)})`;
+      waterCtx.fillRect(x,y+phase,CELL,2);
+    }
+    const spark=Math.sin(waterTime*5+c*1.3+r*2.7);
+    if(spark>0.93){waterCtx.fillStyle='rgba(200,240,255,0.6)';waterCtx.fillRect(x+((c*31+r*17)%CELL),y+((c*19+r*13)%CELL),2,2);}
+  }
+}
+
+// ── Fire animation ────────────────────────────────────────────────────────
+const fireParticles=[];
+function spawnFireAt(cx,cy){
+  for(let i=0;i<3;i++) fireParticles.push({x:cx+(Math.random()-0.5)*18,y:cy+Math.random()*6,vx:(Math.random()-0.5)*0.8,vy:-(1.2+Math.random()*1.8),size:3+Math.random()*5,life:1.0,decay:0.018+Math.random()*0.022});
+}
+function animateFire(){
+  requestAnimationFrame(animateFire);
+  fireCtx.clearRect(0,0,fireCanvas.width,fireCanvas.height);
+  placedSprites.forEach(d=>{
+    if(!d.siege) return;
+    const{x,y}=cellToPixel(d.col,d.row);
+    const sz=Math.round(CELL*(d.def.scale||1));
+    if(Math.random()<0.7) spawnFireAt(x+CELL/2,y+CELL/2-sz*0.2);
+  });
+  for(let i=fireParticles.length-1;i>=0;i--){
+    const p=fireParticles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy*=0.97;p.life-=p.decay;
+    if(p.life<=0){fireParticles.splice(i,1);continue;}
+    const t=1-p.life;
+    fireCtx.beginPath();
+    fireCtx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+    fireCtx.fillStyle=`rgba(255,${Math.max(0,Math.round(200-t*200))},0,${Math.min(p.life,0.85).toFixed(2)})`;
+    fireCtx.fill();
+  }
+}
+
+// ══ GAME UI ═══════════════════════════════════════════════════════════════
+
+// 10 crops for betting (Boss picks final 10 — these are placeholders)
+// All 10 use crops with verified _growing.png files (101-byte placeholders excluded)
+const GAME_CROPS = [
+  {id:'beet',        name:'Beet',        emoji:'🌱'},
+  {id:'carrot',      name:'Carrot',      emoji:'🥕'},
+  {id:'corn',        name:'Corn',        emoji:'🌽'},
+  {id:'pumpkin',     name:'Pumpkin',     emoji:'🎃'},
+  {id:'tomato',      name:'Tomato',      emoji:'🍅'},
+  {id:'onion',       name:'Onion',       emoji:'🧅'},
+  {id:'leafy_green', name:'Leafy Green', emoji:'🥗'},
+  {id:'root_veg',    name:'Root Veg',    emoji:'🌿'},
+  {id:'tall_plant',  name:'Tall Plant',  emoji:'🌾'},
+  {id:'vine_crop',   name:'Vine Crop',   emoji:'🍇'},
+];
+let selectedCrop = null;
+const GC = 'ui-assets/farm-art/growing-crops/';
+// Crop stage names — images named {id}_seed.png, {id}_sprout.png, {id}_growing.png, {id}_mature.png
+const CROP_STAGES = ['sprout', 'sprout', 'growing', 'mature']; // no _seed.png files; sprout is earliest stage
+
+function getCropStage(timerSecRemaining, roundDuration) {
+  const elapsed = roundDuration - timerSecRemaining;
+  const pct = roundDuration > 0 ? elapsed / roundDuration : 1;
+  if (pct < 0.25) return 0;      // seed (0–25%)
+  if (pct < 0.50) return 1;      // sprout (25–50%)
+  if (pct < 0.75) return 2;      // growing (50–75%)
+  return 3;                       // mature (75–100%)
+}
+
+let _roundDuration = 120; // updated from chain; used for stage calc
+
+function buildCropButtons(){
+  const grid = document.getElementById('crop-grid');
+  GAME_CROPS.forEach(crop => {
+    const btn = document.createElement('button');
+    btn.className = 'crop-btn';
+    btn.dataset.cropId = crop.id;
+    btn.innerHTML = `<img class="crop-stage-img" src="${GC}${crop.id}_mature.png" alt="${crop.name}"><span class="cname">Plant ${crop.name}</span><div class="crop-bar"><div class="crop-bar-fill" style="width:0%;height:3px;background:#c0a040;border-radius:2px;transition:width 0.5s"></div></div><span class="crop-eth" style="font-size:0.6em;color:#7a6030;display:block">0.0000 ETH</span>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.crop-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedCrop = crop.id;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function updateCropStages() {
+  const stage = getCropStage(timerSec, _roundDuration);
+  const stageName = CROP_STAGES[stage];
+  // Update "Plant a Crop" panel buttons
+  document.querySelectorAll('.crop-stage-img').forEach(img => {
+    const cropId = img.closest('.crop-btn')?.dataset?.cropId;
+    if (!cropId) return;
+    const newSrc = `${GC}${cropId}_${stageName}.png`;
+    if (img.src !== newSrc) img.src = newSrc;
+  });
+  // Update crop tiles placed on the map field — swap image AND scale size so crops visibly grow
+  const FIELD_SCALE = [0.38, 0.55, 0.78, 1.0]; // sprout→growing→mature size multipliers
+  const sizeScale = FIELD_SCALE[stage];
+  placedSprites.forEach(data => {
+    if (!data.cropId) return;
+    const newSrc = `${GC}${data.cropId}_${stageName}.png`;
+    if (!data.el.src.includes(`${data.cropId}_${stageName}`)) data.el.src = newSrc;
+    // Scale the element so crops visibly grow through the round
+    const baseScale = data.def.scale || 1.0;
+    const displaySize = Math.round(CELL * baseScale * sizeScale);
+    const { x, y } = cellToPixel(data.col, data.row);
+    data.el.style.width  = displaySize + 'px';
+    data.el.style.height = displaySize + 'px';
+    data.el.style.left   = (x + CELL / 2 - displaySize / 2) + 'px';
+    data.el.style.top    = (y + CELL / 2 - displaySize / 2) + 'px';
+  });
+}
+
+// Round timer — counts down every second locally; chain recalibrates every 2s (light) / 10s (heavy)
+let timerSec = 120;
+let chainDataLive = false;
+let _settling = false;   // true while VRF is pending (round locked, no countdown)
+let _lastRoundId = -1n;  // detect round transitions for immediate heavy sync
+function tickTimer(){
+  if (_settling) {
+    const el = document.getElementById('timer-val');
+    if (el) { el.textContent = '⚙'; el.style.color = '#888'; }
+    return;
+  }
+  timerSec = Math.max(0, timerSec - 1);
+  const m=Math.floor(timerSec/60), s=(timerSec%60).toString().padStart(2,'0');
+  const el=document.getElementById('timer-val');
+  if(el){ el.textContent=m+':'+s; el.style.color=timerSec<15?'#c04020':'#f0c040'; }
+  updateCropStages();
+}
+
+function connectWallet(){ alert('Connect wallet — wire to ethers.js'); }
+function deployToCrop(){ if(!selectedCrop){alert('Select a crop first');return;} alert(`Deploy ${document.getElementById('deploy-amount').value} ETH to ${selectedCrop}`); }
+function boostCrop(){ if(!selectedCrop){alert('Select a crop first');return;} alert(`Boost ${selectedCrop}`); }
+
+// ══ WOOD GRAIN CANVAS — fills full wrapper, zero tiling ═══════════════════
+function generateWoodGrain(){
+  const wc = document.getElementById('wood-canvas');
+  const W = wrapper.offsetWidth, H = wrapper.offsetHeight;
+  wc.width = W; wc.height = H;
+  const wctx = wc.getContext('2d');
+  const img = wctx.createImageData(W, H);
+  const d = img.data;
+
+  // Dark walnut base
+  const BR=22, BG=10, BB=4;
+
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      // Long sweeping horizontal grain waves — different frequency at each x,y
+      // Using absolute y position → every row unique across full height
+      const w1=Math.sin(y*0.042+x*0.005)*16;
+      const w2=Math.sin(y*0.11+x*0.003+1.2)*7;
+      const w3=Math.sin(y*0.19+x*0.002+2.4)*4;
+      const w4=Math.sin(y*0.026-x*0.003+0.7)*10;
+      const w5=Math.sin(y*0.072+x*0.0015+0.4)*5;
+      let grain=w1+w2+w3+w4+w5;
+      // Deterministic pixel noise (no random — reproducible)
+      const h=((x*1301+y*7919)^(x*37+y*1009));
+      const noise=((h>>>14)&0xFF)/255*4-2;
+      grain+=noise*0.5;
+      const r=Math.max(0,Math.min(255,BR+Math.round(grain*1.05)));
+      const g=Math.max(0,Math.min(255,BG+Math.round(grain*0.55)));
+      const b=Math.max(0,Math.min(255,BB+Math.round(grain*0.28)));
+      const i=(y*W+x)*4;
+      d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255;
+    }
+  }
+  wctx.putImageData(img,0,0);
+
+  // A few natural knot rings scattered across the full canvas (not on arm)
+  [[W*0.08,H*0.12],[W*0.91,H*0.72],[W*0.12,H*0.83],[W*0.72,H*0.22]].forEach(([kx,ky])=>{
+    for(let r=16;r>0;r--){
+      const t=r/16;
+      const v=Math.round(255*(0.02+t*0.08));
+      wctx.strokeStyle=`rgb(${v},${Math.round(v/2)},0)`;
+      wctx.lineWidth=1;
+      wctx.beginPath();
+      wctx.ellipse(kx,ky,r*1.6,r*0.8,0.05,0,Math.PI*2);
+      wctx.stroke();
+    }
+  });
+}
+
+// ══ THEME & UI STYLE SWITCHER ═════════════════════════════════════════════
+
+// 5 UI theming options — applied to .ui-panel elements
+const UI_STYLES = {
+  // 1. box: semi-transparent panel (current default)
+  box: `.ui-panel{background:rgba(4,1,0,0.48);backdrop-filter:brightness(0.62) saturate(0.8);border:1px solid rgba(130,80,20,0.35);border-radius:5px;box-shadow:inset 0 0 40px rgba(0,0,0,0.30),0 2px 10px rgba(0,0,0,0.4);}`,
+
+  // 2. bare: NO panel background — text floats directly on background
+  bare: `.ui-panel{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;}.panel-title,.panel-stat,.mini-table td,.mini-table th,.crop-btn .cname{text-shadow:0 1px 3px rgba(0,0,0,0.85),0 0 8px rgba(0,0,0,0.4)!important;}.crop-btn{background:rgba(0,0,0,0.2)!important;border-color:rgba(120,80,20,0.22)!important;}`,
+
+  // 3. vignette: soft radial dark spot under each panel — no hard edges
+  vignette: `.ui-panel{background:radial-gradient(ellipse 95% 90% at 50% 46%,rgba(0,0,0,0.54) 15%,rgba(0,0,0,0.25) 55%,transparent 100%)!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;border-radius:50% 50% / 40% 40%!important;}.crop-btn{background:rgba(0,0,0,0.28)!important;border-color:rgba(100,70,15,0.3)!important;}`,
+
+  // 4. ruled: gold horizontal rule dividers only — no box background
+  ruled: `.ui-panel{background:transparent!important;border:none!important;border-top:2px solid rgba(180,140,30,0.65)!important;box-shadow:0 -1px 0 rgba(255,220,100,0.15)!important;backdrop-filter:none!important;border-radius:0!important;padding-top:2px!important;}.panel-title{color:#d4a830!important;border-bottom:1px solid rgba(160,120,25,0.45)!important;padding-bottom:5px!important;}.mini-table tr{border-bottom:1px solid rgba(140,100,20,0.2)!important;}.crop-btn{background:transparent!important;border:1px solid rgba(150,110,25,0.3)!important;}`,
+
+  // 5. inset: carved/pressed INTO the background — deep inset shadow, barely visible bg
+  inset: `.ui-panel{background:rgba(0,0,0,0.14)!important;border:1px solid rgba(45,30,8,0.28)!important;box-shadow:inset 0 2px 10px rgba(0,0,0,0.7),inset 0 -1px 4px rgba(180,130,50,0.1),inset 1px 0 4px rgba(0,0,0,0.4),inset -1px 0 4px rgba(0,0,0,0.4)!important;backdrop-filter:brightness(0.55)!important;border-radius:3px!important;}`,
+};
+
+(function applyTheme(){
+  const params = new URLSearchParams(location.search);
+  const theme = params.get('theme') || 'photo';
+  const uiStyle = params.get('ui') || 'box';
+  const wrapper = document.getElementById('map-wrapper');
+  const FRAMES = {
+    gold:   {mid:'#c88a12',dark:'#2a1204',shadow:'#6a3a06',light:'#d49a18',outer:'#1a0a02',inner:'#8a5208'},
+    silver: {mid:'#b0bac4',dark:'#1a2026',shadow:'#404c56',light:'#ccd6de',outer:'#0c1014',inner:'#788490'},
+    bronze: {mid:'#b07038',dark:'#2a1408',shadow:'#5a3018',light:'#c88048',outer:'#140a04',inner:'#7a4a20'},
+    red:    {mid:'#a02828',dark:'#220808',shadow:'#500e0e',light:'#c83030',outer:'#120404',inner:'#6a1414'},
+    purple: {mid:'#7830a8',dark:'#1a0830',shadow:'#3a1060',light:'#9040c8',outer:'#0c0418',inner:'#501878'},
+    green:  {mid:'#2a7838',dark:'#081a0c',shadow:'#0e3e18',light:'#309848',outer:'#040e06',inner:'#165824'},
+    black:  {mid:'#3a3a3a',dark:'#080808',shadow:'#1a1a1a',light:'#505050',outer:'#020202',inner:'#282828'},
+  };
+  const fc = FRAMES[params.get('frame')] || FRAMES.silver;
+  const root = document.documentElement;
+  root.style.setProperty('--frame-mid',    fc.mid);
+  root.style.setProperty('--frame-dark',   fc.dark);
+  root.style.setProperty('--frame-shadow', fc.shadow);
+  root.style.setProperty('--frame-light',  fc.light);
+  root.style.setProperty('--frame-outer',  fc.outer);
+  root.style.setProperty('--frame-inner',  fc.inner);
+  document.body.classList.add('theme-' + theme);
+
+  // Inject UI style
+  const styleEl = document.createElement('style');
+  styleEl.id = 'ui-style-css';
+  styleEl.textContent = UI_STYLES[uiStyle] || UI_STYLES.box;
+  document.head.appendChild(styleEl);
+
+  if(theme === 'photo'){
+    // Option 1: Real ambientCG photographed oak wood floor
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/wood-real-photo.jpg')";
+    wrapper.style.backgroundSize='cover';
+    wrapper.style.backgroundPosition='center';
+    wrapper.style.imageRendering='auto';
+    wrapper.style.border='4px solid #4a2a0a';
+    document.body.style.background='#1a0a02';
+  } else if(theme === 'dark-wood'){
+    // WoodSiding001 — very dark rough-hewn planks (avg brightness 42)
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/wood-siding1.jpg')";
+    wrapper.style.backgroundSize='cover'; wrapper.style.backgroundPosition='center';
+    wrapper.style.imageRendering='auto'; wrapper.style.border='4px solid #1a0c06';
+    document.body.style.background='#0a0402';
+  } else if(theme === 'dark-wood2'){
+    // Pre-baked mahogany: oak photo darkened+warmed in PIL (no filter on wrapper)
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/wood-mahogany.jpg')";
+    wrapper.style.backgroundSize='cover'; wrapper.style.backgroundPosition='center';
+    wrapper.style.imageRendering='auto'; wrapper.style.filter='';
+    wrapper.style.border=''; // keep CSS frame
+    document.body.style.background='#0e0602';
+  } else if(theme === 'bark'){
+    // Bark002 — natural tree bark, rough organic texture (avg brightness 113)
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/wood-bark2.jpg')";
+    wrapper.style.backgroundSize='cover'; wrapper.style.backgroundPosition='center';
+    wrapper.style.imageRendering='auto'; wrapper.style.border='4px solid #2a1a0a';
+    document.body.style.background='#0e0a04';
+  } else if(theme === 'pixel-mountains'){
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/bg-pixel-mountains.png')";
+    wrapper.style.backgroundSize='cover'; wrapper.style.backgroundPosition='center';
+    wrapper.style.imageRendering='pixelated';
+    document.body.style.background='#1a2a1a';
+  } else if(theme === 'pixel-floor'){
+    // Option 2: Pixel art dark stone floor — same tiles as the map's cliff boundary
+    document.getElementById('wood-canvas').style.display='none';
+    wrapper.style.backgroundImage="url('ui-assets/misc-art/lpc-cliff-final/mid_r099_c121.png')";
+    wrapper.style.backgroundSize='54px 54px';
+    wrapper.style.imageRendering='pixelated';
+    wrapper.style.border='4px solid #3a3440';
+    document.body.style.background='#1a1820';
+  } else if(theme === 'parchment'){
+    // Rough aged parchment — corner stains, heavy fiber noise, uneven base color
+    wrapper.style.backgroundImage = [
+      // Aged dark corners (foxing / coffee stains)
+      "radial-gradient(ellipse 38% 28% at 2% 3%, rgba(85,48,6,0.35) 0%, transparent 100%)",
+      "radial-gradient(ellipse 30% 22% at 98% 97%, rgba(85,48,6,0.30) 0%, transparent 100%)",
+      "radial-gradient(ellipse 22% 38% at 97% 4%, rgba(65,36,4,0.25) 0%, transparent 100%)",
+      "radial-gradient(ellipse 28% 18% at 3% 97%, rgba(65,36,4,0.22) 0%, transparent 100%)",
+      // Central fading (lighter center, darker edges — like held/folded parchment)
+      "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(220,180,110,0.12) 0%, rgba(70,40,5,0.15) 100%)",
+      // Dense fiber noise — high baseFrequency + numOctaves for rough texture
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E\")",
+      // Base color — uneven warm tones, not a flat gradient
+      "linear-gradient(152deg, #a87030 0%, #c4924a 12%, #b07838 28%, #caa250 42%, #b08040 58%, #c49650 72%, #aa7434 88%, #c29048 100%)"
+    ].join(',');
+    wrapper.style.backgroundSize = '100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 220px 220px, 100% 100%';
+    wrapper.style.border = '4px solid #7a4e18';
+    wrapper.style.boxShadow = '0 0 60px rgba(0,0,0,0.8), inset 0 0 80px rgba(50,25,5,0.3)';
+  } else if(theme === 'stone'){
+    wrapper.style.backgroundImage = [
+      "linear-gradient(rgba(44,42,40,0.6) 1px, transparent 1px)",
+      "linear-gradient(90deg, rgba(44,42,40,0.5) 1px, transparent 1px)",
+      "linear-gradient(135deg, #8c8a82 0%, #807e76 35%, #888680 65%, #84807a 100%)"
+    ].join(',');
+    wrapper.style.backgroundSize = '58px 42px, 58px 42px, 100% 100%';
+    wrapper.style.border = '4px solid #585650';
+    document.querySelectorAll('.ui-panel').forEach(p=>{
+      p.style.background='rgba(18,18,16,0.52)';
+      p.style.borderColor='rgba(76,74,68,0.4)';
+    });
+  }
+  // 'wood' = default CSS (no change needed)
+})();
+
+// ══ INIT ══════════════════════════════════════════════════════════════════
+initGrid();
+generateWoodGrain();
+(async()=>{
+  await Promise.all([loadGrassPattern(), loadCliffTile()]);
+  await loadState();
+  drawGrid();
+  redrawSprites();
+})();
+animateWater();
+animateFire();
+buildCropButtons();
+setInterval(tickTimer, 1000);
+
+// ── Live sync: auto-update when map.html saves to localStorage ───────────
+window.addEventListener('storage', async e => {
+  if (e.key === 'km_sprites' || e.key === 'km_terrain' || e.key === 'km_void' || e.key === 'km_added') {
+    // Wipe current sprites
+    document.getElementById('sprite-layer').innerHTML = '';
+    placedSprites = [];
+    voidCells.clear();
+    addedCells.clear();
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) terrainGrid[r][c]=null;
+    await loadState();
+    drawGrid();
+    redrawSprites();
+  }
+});
+// ══ LIVE CONTRACT DATA ══════════════════════════════════════════════════════
+// Reads on-chain state from Base Sepolia testnet every 5s and updates the UI.
+// On mainnet: swap RPC + addresses below (or load from /config.json).
+// If ethers.js fails to load (offline), mock data is used as fallback.
+
+const CHAIN_CFG = {
+  rpc:     'https://base-sepolia-rpc.publicnode.com',
+  game:    '0xDdddbFf00F6E0e25bcD9fD57A0D2BE30b94407ec',
+  grain:   '0x97F554d707e6221Ec1E1107e785c4661Cc79EC2C',
+  reaper:  '0x087CFD99B08eb46ea7c73A7b67cFc7b6368C7D32',
+  faction: '0x31dB6301f3cE4C8dA9Ec4e5Fb37FAdf35A2aEb58',
+  castle:  '0x5BB26Bb05dA202122F47B580de13d8FA59DBc6e1',
+};
+
+const GAME_ABI_MIN = [
+  'function currentRoundId() view returns (uint256)',
+  'function roundStartTime() view returns (uint256)',
+  'function ROUND_DURATION() view returns (uint256)',
+  'function roundTotals(uint256) view returns (uint256)',
+  'function hoardBalance() view returns (uint256)',
+  'function REVOLT_FLOOR() view returns (uint256)',
+  'function cropTotals(uint256,uint8) view returns (uint256)',
+  'function roundResults(uint256) view returns (uint8 winningCrop, uint256 total, uint256 emission, bool jackpot)',
+  'function roundOpen() view returns (bool)',
+];
+const GRAIN_ABI_MIN = [
+  'function totalSupply() view returns (uint256)',
+  'function balanceOf(address) view returns (uint256)',
+];
+const REAPER_ABI_MIN = [
+  'function getCurrentLeader() view returns (address, uint256)',
+  'function getWindowTimeRemaining() view returns (uint256)',
+  'function WINDOW_DURATION() view returns (uint256)',
+  'function getUserWindowEarnings(address) view returns (uint256)',
+  'function current() view returns (uint256 id, uint256 startTime, address topEarner, uint256 topAmount, uint256 prize, bool paid)',
+];
+const FACTION_ABI_MIN = [
+  'function getFactionMemberCount(uint8) view returns (uint8)',
+  'function getEpochEthDeployed(uint8) view returns (uint256)',
+];
+const CASTLE_ABI_MIN = [
+  'function getHolder(uint8) view returns (address)',
+  'function getGarrison(uint8) view returns (uint256)',
+  'function isHeld(uint8) view returns (bool)',
+  'function isProtected(uint8) view returns (bool)',
+  'function getIncomeShare(uint8) view returns (uint256)',
+];
+
+async function initChainData() {
+  if (typeof ethers === 'undefined') {
+    console.warn('ethers.js not loaded — using mock data');
+    document.getElementById('round-num').textContent = '?';
+    document.getElementById('pool-val').textContent  = '— ETH';
+    document.getElementById('price-val').textContent = '—';
+    return;
+  }
+  try {
+    const provider = new ethers.JsonRpcProvider(CHAIN_CFG.rpc);
+    const game     = new ethers.Contract(CHAIN_CFG.game,    GAME_ABI_MIN,    provider);
+    const grain    = new ethers.Contract(CHAIN_CFG.grain,   GRAIN_ABI_MIN,   provider);
+    const reaper   = new ethers.Contract(CHAIN_CFG.reaper,  REAPER_ABI_MIN,  provider);
+    const faction  = new ethers.Contract(CHAIN_CFG.faction, FACTION_ABI_MIN, provider);
+    const castle   = new ethers.Contract(CHAIN_CFG.castle,  CASTLE_ABI_MIN,  provider);
+
+    // ── Light sync: runs every 2s — just round ID + timer recalibration ──────────────────
+    async function lightSync() {
+      try {
+        const [roundId, startTs, roundDur, roundOpen] = await Promise.all([
+          game.currentRoundId(),
+          game.roundStartTime(),
+          game.ROUND_DURATION(),
+          game.roundOpen(),
+        ]);
+
+        // Detect VRF-pending state (Settling...)
+        _settling = !roundOpen;
+
+        // Recalibrate local timer from chain
+        if (roundOpen) {
+          const nowSec = BigInt(Math.floor(Date.now() / 1000));
+          const expiry = startTs + roundDur;
+          timerSec = expiry > nowSec ? Number(expiry - nowSec) : 0;
+          _roundDuration = Number(roundDur);
+        }
+
+        // Detect new round → show winner/loser crop effects, then full sync
+        if (roundId !== _lastRoundId && _lastRoundId !== -1n) {
+          const prevRound = roundId - 1n;
+          try {
+            const result = await game.roundResults(prevRound);
+            const winCrop = Number(result.winningCrop);
+            const btns = document.querySelectorAll('.crop-btn');
+            // Reset any previous round animation
+            btns.forEach(b => { b.classList.remove('crop-winner','crop-loser','crop-revive'); });
+            // Apply winner glow + loser burn
+            btns.forEach((b, i) => {
+              if (i === winCrop) b.classList.add('crop-winner');
+              else b.classList.add('crop-loser');
+            });
+            // After 4s, revive all crops for the new round
+            setTimeout(() => {
+              btns.forEach(b => {
+                b.classList.remove('crop-winner','crop-loser');
+                b.classList.add('crop-revive');
+              });
+              setTimeout(() => btns.forEach(b => b.classList.remove('crop-revive')), 900);
+            }, 4000);
+          } catch(e) { /* round result not yet available — skip animation */ }
+        }
+        if (roundId !== _lastRoundId) {
+          _lastRoundId = roundId;
+          const rnEl = document.getElementById('round-num');
+          if (rnEl) rnEl.textContent = roundId.toString();
+          syncChain(); // full sync immediately on round change
+        }
+      } catch(e) { /* silent — heavy sync will recover */ }
+    }
+
+    // ── Heavy sync: all game state — runs every 10s and on round change ─────────────────
+    async function syncChain() {
+      try {
+        const [roundId, startTs, roundDur, hoard, revoltFloor] = await Promise.all([
+          game.currentRoundId(),
+          game.roundStartTime(),
+          game.ROUND_DURATION(),
+          game.hoardBalance(),
+          game.REVOLT_FLOOR(),
+        ]);
+
+        const pool    = await game.roundTotals(roundId);
+
+        // ── Round number (lightSync also updates this — heavy sync keeps it fresh) ──
+        const rnEl = document.getElementById('round-num');
+        if (rnEl) rnEl.textContent = roundId.toString();
+        // Update local round duration for stage calc
+        _roundDuration = Number(roundDur);
+
+        // ── Pool ETH ──
+        const poolEl = document.getElementById('pool-val');
+        if (poolEl) poolEl.textContent = parseFloat(ethers.formatEther(pool)).toFixed(4) + ' ETH';
+
+        // ── Hoard ──
+        const hoardFmt = parseFloat(ethers.formatEther(hoard)).toFixed(0);
+        const floorFmt = parseFloat(ethers.formatEther(revoltFloor)).toFixed(0);
+        const hoardEl  = document.getElementById('hoard-val');
+        const fillEl   = document.getElementById('hoard-fill');
+        const hoardPct = revoltFloor > 0n
+          ? Math.min(100, Math.round(parseFloat(ethers.formatEther(hoard)) / parseFloat(ethers.formatEther(revoltFloor)) * 100))
+          : 0;
+        if (hoardEl) hoardEl.textContent = parseInt(hoardFmt).toLocaleString();
+        if (fillEl)  fillEl.style.width  = hoardPct + '%';
+        const pctTextEl = document.getElementById('hoard-pct-text');
+        if (pctTextEl) {
+          pctTextEl.textContent = hoardPct + '% charged' + (hoardPct >= 95 ? ' — revolt imminent' : '');
+          pctTextEl.style.color = hoardPct >= 90 ? '#c04020' : hoardPct >= 50 ? '#c08030' : '#7a6030';
+        }
+
+        // ── Crop totals for current round ──
+        const cropTotalPromises = Array.from({length:10}, (_,i) => game.cropTotals(roundId, i));
+        const cropAmts = await Promise.all(cropTotalPromises);
+        const maxCrop  = cropAmts.reduce((a,b) => b > a ? b : a, 0n);
+        document.querySelectorAll('.crop-btn').forEach((btn, i) => {
+          if (i >= cropAmts.length) return;
+          const amt  = cropAmts[i];
+          const pct  = maxCrop > 0n ? Math.round(Number(amt * 100n / maxCrop)) : 0;
+          const eth  = parseFloat(ethers.formatEther(amt)).toFixed(4);
+          const barEl = btn.querySelector('.crop-bar-fill');
+          const amtEl = btn.querySelector('.crop-eth');
+          if (barEl) barEl.style.width = pct + '%';
+          if (amtEl) amtEl.textContent = eth + ' ETH';
+        });
+
+        // ── Reaper ──
+        try {
+          const [leader, reaperLeft, win] = await Promise.all([
+            reaper.getCurrentLeader(),
+            reaper.getWindowTimeRemaining(),
+            reaper.current(),
+          ]);
+          const [leaderAddr, leaderAmt] = leader;
+          const reaperLeftN = Number(reaperLeft);
+          const rm = Math.floor(reaperLeftN / 3600);
+          const rs = Math.floor((reaperLeftN % 3600) / 60);
+
+          const rnameEl  = document.getElementById('reaper-name');
+          const rgrainEl = document.getElementById('reaper-grain');
+          const rtimeEl  = document.getElementById('reaper-time');
+          const rprizeEl = document.getElementById('reaper-prize');
+          if (rnameEl)  rnameEl.textContent  = leaderAddr !== ethers.ZeroAddress
+            ? leaderAddr.slice(0,6)+'..'+leaderAddr.slice(-4) : 'None';
+          if (rgrainEl) rgrainEl.textContent = parseInt(ethers.formatEther(leaderAmt)).toLocaleString();
+          if (rtimeEl)  rtimeEl.textContent  = rm + 'h ' + rs + 'm';
+          if (rprizeEl) rprizeEl.textContent = parseFloat(ethers.formatEther(win.prize)).toFixed(4) + ' ETH';
+
+          // Reaper race cards — update top earner card
+          const card0 = document.getElementById('race-card-0');
+          if (card0 && leaderAddr !== ethers.ZeroAddress) {
+            card0.querySelector('.race-addr').textContent = leaderAddr.slice(0,6)+'..'+leaderAddr.slice(-4);
+            card0.querySelector('.race-grain').textContent = parseInt(ethers.formatEther(leaderAmt)).toLocaleString()+' GRAIN';
+          }
+        } catch(e) { console.warn('Reaper sync:', e.message?.slice(0,50)); }
+
+        // ── Factions ──
+        try {
+          const FACTION_NAMES  = ['Burgundy','Orléans','Armagnac','Bourbon'];
+          const FACTION_COLORS = ['#c02030','#4488ee','#30b040','#d08030'];
+          const [counts, ethAmts] = await Promise.all([
+            Promise.all([0,1,2,3].map(i => faction.getFactionMemberCount(i))),
+            Promise.all([0,1,2,3].map(i => faction.getEpochEthDeployed(i))),
+          ]);
+          const tbody = document.querySelector('#faction-table tbody');
+          if (tbody) {
+            tbody.innerHTML = FACTION_NAMES.map((name, i) => {
+              const eth = parseFloat(ethers.formatEther(ethAmts[i])).toFixed(3);
+              const members = Number(counts[i]);
+              return `<tr>
+                <td><span style="color:${FACTION_COLORS[i]}">■</span> <span style="color:#ddc88a">${name}</span></td>
+                <td class="gold" style="text-align:right">${eth}</td>
+                <td class="gold" style="text-align:right">${members}</td>
+              </tr>`;
+            }).join('');
+          }
+        } catch(e) { console.warn('Faction sync:', e.message?.slice(0,50)); }
+
+        // ── Castles ──
+        try {
+          const castleIds = [0,1,2,3,4,5];
+          const [holders, garrisons, held, protected_] = await Promise.all([
+            Promise.all(castleIds.map(i => castle.getHolder(i))),
+            Promise.all(castleIds.map(i => castle.getGarrison(i))),
+            Promise.all(castleIds.map(i => castle.isHeld(i))),
+            Promise.all(castleIds.map(i => castle.isProtected(i))),
+          ]);
+          const slots = document.querySelectorAll('.castle-slot');
+          slots.forEach((slot, i) => {
+            if (i >= 6) return;
+            const isHeldNow = held[i];
+            const garrisonEth = Number(ethers.formatEther(garrisons[i]));
+            // Tier by garrison size (GRAIN)
+            let tier = 'Open';
+            if (isHeldNow) {
+              if (garrisonEth >= 10_000_000)      tier = 'Fortress';
+              else if (garrisonEth >= 1_000_000)  tier = 'Stronghold';
+              else                                 tier = 'Outpost';
+            }
+            slot.className = 'castle-slot ' + (isHeldNow ? (protected_[i] ? 'protected' : 'held') : 'open');
+            const tierEl   = slot.querySelector('.tier');
+            const holderEl = slot.querySelector('.holder');
+            const pctEl    = slot.querySelector('.pct');
+            if (tierEl)   tierEl.textContent   = isHeldNow && protected_[i] ? '🔒 Protected' : tier;
+            if (holderEl) holderEl.textContent = isHeldNow
+              ? holders[i].slice(0,6)+'..'+holders[i].slice(-4) : 'OPEN';
+            if (pctEl)    pctEl.textContent    = isHeldNow
+              ? (parseInt(garrisonEth/1_000_000)).toLocaleString()+'M G' : '—';
+          });
+        } catch(e) { console.warn('Castle sync:', e.message?.slice(0,50)); }
+
+      } catch (e) {
+        console.warn('Chain sync error:', e.message?.slice(0,60));
+      }
+    }
+
+    chainDataLive = true;
+    lightSync();                          // fast: round ID + timer, every 2s
+    syncChain();                          // heavy: all game state, every 10s
+    setInterval(lightSync, 2000);
+    setInterval(syncChain, 10000);
+
+    // Price display: no Uniswap pair yet — show supply instead
+    const supplyEl = document.getElementById('price-val');
+    if (supplyEl) {
+      grain.totalSupply().then(s => {
+        supplyEl.textContent = (parseInt(ethers.formatEther(s)) / 1e6).toFixed(1) + 'M supply';
+      }).catch(() => { supplyEl.textContent = '—'; });
+    }
+
+  } catch(e) {
+    console.warn('Chain init failed:', e.message?.slice(0,80));
+  }
+}
+
+// Load ethers.js from CDN then init
+(function loadEthers() {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js';
+  s.onload  = () => initChainData();
+  s.onerror = () => {
+    console.warn('ethers CDN failed — no live data');
+    document.getElementById('round-num').textContent = '?';
+    document.getElementById('pool-val').textContent  = '—';
+    document.getElementById('price-val').textContent = '—';
+  };
+  document.head.appendChild(s);
+})();
+
+
+</script>
+</body>
+</html>

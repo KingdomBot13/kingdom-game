@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Kingdom - GRAIN Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0b10; --bg2: #13151f; --bg3: #1a1d2a;
+    --border: #1e2130; --gold: #c9a84c; --gold-dim: #8a6f2e;
+    --text: #d4d6e0; --text-dim: #6b6f85; --text-bright: #f0f1f5;
+    --sidebar-w: 235px; --green: #4caf6e; --red: #e05252;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.68; min-height: 100vh; }
+  header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 52px; background: rgba(10,11,16,0.96); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; backdrop-filter: blur(8px); }
+  .nav-left { display: flex; align-items: center; gap: 32px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; color: var(--gold); text-decoration: none; letter-spacing: -0.3px; cursor: pointer; }
+  nav a { color: var(--text-dim); text-decoration: none; font-size: 14px; transition: color .15s; }
+  nav a:hover { color: var(--text-bright); }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .price-badge { font-size: 13px; color: var(--gold); background: rgba(201,168,76,0.1); border: 1px solid var(--gold-dim); padding: 4px 10px; border-radius: 6px; }
+  .btn-connect { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 7px; cursor: pointer; font-size: 13px; transition: border-color .15s, color .15s; }
+  .btn-connect:hover { border-color: var(--gold); color: var(--gold); }
+  .layout { display: flex; padding-top: 52px; min-height: 100vh; }
+  aside { position: fixed; top: 52px; left: 0; bottom: 0; width: var(--sidebar-w); overflow-y: auto; background: var(--bg); border-right: 1px solid var(--border); padding: 20px 0 40px; }
+  aside::-webkit-scrollbar { width: 4px; }
+  aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .sidebar-label { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 20px 8px; }
+  .sidebar-group { margin-bottom: 4px; }
+  .sidebar-parent { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px; cursor: pointer; color: var(--text-dim); font-size: 14px; transition: color .15s; border: none; background: none; width: 100%; text-align: left; }
+  .sidebar-parent:hover, .sidebar-parent.open { color: var(--text-bright); }
+  .sidebar-children { display: none; }
+  .sidebar-children.open { display: block; }
+  .sidebar-link { display: block; padding: 5px 20px 5px 32px; color: var(--text-dim); font-size: 13.5px; text-decoration: none; cursor: pointer; transition: color .15s; border: none; background: none; width: 100%; text-align: left; }
+  .sidebar-link:hover { color: var(--text-bright); }
+  .sidebar-link.active, .sidebar-solo.active { color: var(--gold); }
+  .sidebar-solo { display: block; padding: 6px 20px; color: var(--text-dim); font-size: 14px; cursor: pointer; transition: color .15s; border: none; background: none; width: 100%; text-align: left; }
+  .sidebar-solo:hover { color: var(--text-bright); }
+  .chevron { transition: transform .2s; font-size: 11px; }
+  .open > .chevron { transform: rotate(90deg); }
+  hr.sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  main { margin-left: var(--sidebar-w); flex: 1; padding: 48px 64px 100px; max-width: calc(var(--sidebar-w) + 800px); }
+  .section { display: none; }
+  .section.active { display: block; }
+  h1 { font-size: 28px; font-weight: 700; color: var(--text-bright); margin-bottom: 6px; letter-spacing: -0.5px; }
+  .section-subtitle { color: var(--text-dim); font-size: 15px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 19px; font-weight: 600; color: var(--text-bright); margin: 36px 0 12px; }
+  h3 { font-size: 15px; font-weight: 600; color: var(--gold); margin: 24px 0 8px; }
+  p { margin-bottom: 14px; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+  th { text-align: left; padding: 8px 12px; background: var(--bg3); color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .callout { background: var(--bg2); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 20px 0; font-size: 14px; }
+  .callout.warning { border-color: var(--red); }
+  .callout.green { border-color: var(--green); }
+  .callout strong { color: var(--text-bright); }
+  code { font-family: 'Fira Code', monospace; font-size: 13px; background: var(--bg3); padding: 2px 6px; border-radius: 4px; color: var(--gold); }
+  pre { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 16px 0; font-family: 'Fira Code', monospace; font-size: 13px; color: #a8afc0; line-height: 1.7; }
+  pre .kw { color: #7b9cf0; }
+  pre .str { color: #7ec8a0; }
+  pre .cmt { color: #4a5068; }
+  pre .num { color: var(--gold); }
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 28px; }
+  .feature-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .feature-card .icon { font-size: 22px; margin-bottom: 8px; }
+  .feature-card .title { font-weight: 600; color: var(--text-bright); margin-bottom: 4px; font-size: 14px; }
+  .feature-card .desc { color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+  .stat-row { display: flex; gap: 12px; margin: 20px 0; }
+  .stat { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; text-align: center; }
+  .stat .val { font-size: 20px; font-weight: 700; color: var(--gold); }
+  .stat .lbl { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  ol.steps { list-style: none; padding: 0; }
+  ol.steps li { display: flex; gap: 14px; margin-bottom: 14px; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; background: rgba(201,168,76,0.15); color: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .step-body { padding-top: 3px; }
+  .step-body strong { color: var(--text-bright); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .tag.gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .tag.green { background: rgba(76,175,110,0.15); color: var(--green); }
+  .tag.red { background: rgba(224,82,82,0.15); color: var(--red); }
+  ul { padding-left: 20px; margin-bottom: 14px; }
+  ul li { margin-bottom: 5px; }
+  .lore-block { background: linear-gradient(135deg, rgba(201,168,76,0.06), rgba(201,168,76,0.02)); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; padding: 20px 24px; margin: 24px 0; font-style: italic; color: var(--text-dim); font-size: 14px; line-height: 1.75; }
+  .lore-block em { font-style: normal; color: var(--gold); }
+  .btn-link { background: none; border: none; color: var(--gold); cursor: pointer; padding: 0; font-size: 15px; text-decoration: underline; text-decoration-color: transparent; }
+  .btn-link:hover { text-decoration-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-left">
+    <a class="brand" onclick="show('overview',null)">
+      <span>👑</span><span>The Kingdom</span>
+    </a>
+    <nav>
+      <a href="#" onclick="show('overview',null)">Docs</a>
+    </nav>
+  </div>
+  <div class="nav-right">
+    <div class="price-badge">GRAIN $0.0000107</div>
+    <button class="btn-connect">Connect Wallet</button>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="sidebar-label">GRAIN Docs</div>
+  <button class="sidebar-solo active" onclick="show('overview',this)">Overview</button>
+  <hr class="sidebar-divider">
+  <div class="sidebar-group">
+    <button class="sidebar-parent open" onclick="toggleGroup(this)">How It Works <span class="chevron">›</span></button>
+    <div class="sidebar-children open">
+      <button class="sidebar-link" onclick="show('getting-started',this)">Getting Started</button>
+      <button class="sidebar-link" onclick="show('farming',this)">Farming</button>
+      <button class="sidebar-link" onclick="show('grain-rewards',this)">GRAIN Rewards</button>
+      <button class="sidebar-link" onclick="show('revolt',this)">The Revolt</button>
+      <button class="sidebar-link" onclick="show('castles',this)">Castles &amp; Keeps</button>
+      <button class="sidebar-link" onclick="show('factions',this)">Factions</button>
+      <button class="sidebar-link" onclick="show('citadel',this)">The Citadel</button>
+      <button class="sidebar-link" onclick="show('king',this)">The Reaper</button>
+      <button class="sidebar-link" onclick="show('boost',this)">Royal Decree</button>
+      <button class="sidebar-link" onclick="show('strategy',this)">Strategy</button>
+    </div>
+  </div>
+  <div class="sidebar-group">
+    <button class="sidebar-parent" onclick="toggleGroup(this)">Tokenomics <span class="chevron">›</span></button>
+    <div class="sidebar-children">
+      <button class="sidebar-link" onclick="show('supply',this)">Supply</button>
+      <button class="sidebar-link" onclick="show('vault',this)">Vault &amp; Taxation</button>
+      <button class="sidebar-link" onclick="show('revenue',this)">Protocol Revenue</button>
+      <button class="sidebar-link" onclick="show('burns',this)">Burn Sinks</button>
+      <button class="sidebar-link" onclick="show('economics',this)">📐 The Math</button>
+    </div>
+  </div>
+  <hr class="sidebar-divider">
+  <a class="sidebar-solo" href="../dashboard/game.html" target="_blank" style="display:block;padding:6px 20px;color:var(--text-dim);font-size:14px;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--text-bright)'" onmouseout="this.style.color='var(--text-dim)'">🎮 Play The Kingdom ↗</a>
+  <button class="sidebar-solo" onclick="show('agents',this)">⚙️ Serf Labor</button>
+  <button class="sidebar-solo" onclick="show('faq',this)">FAQ</button>
+</aside>
+
+<main>
+
+<!-- OVERVIEW -->
+<div id="overview" class="section active">
+  <h1>The Kingdom</h1>
+  <p class="section-subtitle">Compete for the King's mercy. Farm GRAIN. Seize power. All on Base.</p>
+
+  <div class="lore-block">
+    <em>The King is capricious, cruel, and perpetually in debt.</em> Each harvest season - every 120 seconds - His Majesty surveys the ten crops of the realm and in his infinite wisdom selects one to spare from taxation. The other nine are seized for the royal coffers. Peasants who farmed the spared crop pocket their harvest. The rest watch theirs disappear into the King's treasury.<br><br>
+    Wise farmers join factions. Powerful factions seize the Citadel. The strongest farmer of each season is crowned The Reaper. And sometimes - unpredictably, mercilessly - the peasants revolt.
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon">🌾</div>
+      <div class="title">10 Crops, 120 Seconds</div>
+      <div class="desc">Deploy ETH to any of 10 crops. Each round, the King spares one - verified by Chainlink VRF. Farm the spared crop and earn GRAIN.</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🏦</div>
+      <div class="title">The Royal Treasury</div>
+      <div class="desc">Taxes collected from nine confiscated crops fund continuous GRAIN buybacks and burns - creating real, programmatic price support every round.</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚔️</div>
+      <div class="title">Four Factions</div>
+      <div class="desc">Swear allegiance to one of four noble houses. Earn bonus GRAIN, battle for the Citadel, and establish dominion over the realm.</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚡</div>
+      <div class="title">The Revolt</div>
+      <div class="desc">Peasant grievances accumulate. When they reach a breaking point, revolution erupts - and all farmers on the winning crop share the entire uprising's spoils, proportional to their stake.</div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="val">120s</div><div class="lbl">Round duration</div></div>
+    <div class="stat"><div class="val">10</div><div class="lbl">Crops per round</div></div>
+    <div class="stat"><div class="val">VRF</div><div class="lbl">Chainlink randomness</div></div>
+    <div class="stat"><div class="val">4</div><div class="lbl">Factions (20 slots)</div></div>
+  </div>
+</div>
+
+<!-- GETTING STARTED -->
+<div id="getting-started" class="section">
+  <h1>Getting Started</h1>
+  <p class="section-subtitle">Your first harvest awaits. Here's how to survive the King's reign.</p>
+
+  <ol class="steps">
+    <li><div class="step-num">1</div><div class="step-body"><strong>Connect your wallet on Base.</strong> You'll need ETH for farming and gas. If you're a proper subject of the realm, you already have some.</div></li>
+    <li><div class="step-num">2</div><div class="step-body"><strong>Choose your crops.</strong> Ten crops are available each round. You may farm one or spread your labor across several. Diversification is prudent when the King's whims are unknowable.</div></li>
+    <li><div class="step-num">3</div><div class="step-body"><strong>Deploy ETH.</strong> The minimum deployment per crop is 0.0001 ETH. Your share of GRAIN is proportional to how much you deploy on the winning crop. Plant more, reap more.</div></li>
+    <li><div class="step-num">4</div><div class="step-body"><strong>Wait for the King's judgment.</strong> Every 120 seconds, Chainlink VRF determines which crop His Majesty deigns to spare. Farmers on the surviving crop earn GRAIN. The other nine crops are taxed into the royal treasury.</div></li>
+    <li><div class="step-num">5</div><div class="step-body"><strong>Claim your GRAIN.</strong> If your crop was spared, claim your earnings. Then return to the fields. Or don't - the King taxes the same tomorrow.</div></li>
+  </ol>
+
+  <h2>The Anti-Sniper Edict</h2>
+  <p>In the first hours after the Kingdom opens, the King has issued an edict against hasty market speculation. A temporary tax applies to GRAIN sales:</p>
+  <table>
+    <tr><th>Time since founding</th><th>GRAIN sell tax</th><th>Notes</th></tr>
+    <tr><td>Hours 0-2</td><td><span class="tag red">90% confiscated</span></td><td>Early flippers lose nearly everything</td></tr>
+    <tr><td>Hours 2-8</td><td><span class="tag gold">50% confiscated</span></td><td>Still punishing</td></tr>
+    <tr><td>Hour 8 onward</td><td><span class="tag green">Free trade</span></td><td>The King has spoken. Markets open.</td></tr>
+  </table>
+
+  <div class="callout warning"><strong>If you are purchasing GRAIN on the open market:</strong> Wait until hour 8. Those who sell before then face the King's wrath in the form of a confiscatory exit tax.</div>
+
+  <h2>Serf Labor</h2>
+  <p>Attending to ten crops every 120 seconds is beneath most nobles. Deploy a serf - an automated agent that farms the fields on your behalf, day and night. Your serf never sleeps, never misses a harvest, and will catch every Revolt jackpot while you slumber. See <button class="btn-link" onclick="show('agents',null)">Serf Labor</button> for setup instructions.</p>
+</div>
+
+<!-- FARMING -->
+<div id="farming" class="section">
+  <h1>Farming</h1>
+  <p class="section-subtitle">120 seconds. Ten crops. One survives. Know your odds.</p>
+
+  <p>Each round, you deploy ETH to one or more of ten crops. When the timer expires, the King selects one crop to exempt from confiscation via Chainlink VRF - cryptographically provable randomness that neither the King, nor the protocol, nor anyone else can influence or predict.</p>
+
+  <p>Farmers on the spared crop receive a proportional share of the <em>loser pool</em> - the ETH collected from the nine taxed crops, minus the King's cut. Farmers on confiscated crops lose their deployed ETH to the tax man.</p>
+
+  <h2>The Royal Tax</h2>
+  <p>Nine-tenths of the realm's harvest goes to the King. His majesty takes his cut from the loser pool before distributing the rest:</p>
+  <table>
+    <tr><th>Tax</th><th>Rate</th><th>Where it goes</th></tr>
+    <tr><td>Royal Treasury (Vault)</td><td>6.5%</td><td>Buys GRAIN on Uniswap → burns forever</td></tr>
+    <tr><td>King's Household</td><td>0%</td><td>Protocol keeps nothing - every ETH goes to players or burns</td></tr>
+    <tr><td>Citadel Tribute</td><td>0.5%</td><td>Distributed to the faction holding the Citadel</td></tr>
+    <tr><td>Castle Income</td><td>0.5%</td><td>Distributed to castle holders, garrison-weighted</td></tr>
+    <tr><td>Reaper Prize</td><td>0.5%</td><td>Accumulates for the 12h Reaper prize pot</td></tr>
+    <tr><td><strong>Total taxation</strong></td><td><strong>8% flat</strong></td><td>-</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim)">The vault rate is flat 6.5% from round 1 - no ramp. The protocol takes no admin fee. Every ETH goes to players or burns.</p>
+
+  <div class="callout"><strong>If your crop loses, you lose your entire stake.</strong> The loser pool is split: 8% goes to protocol fees, and the remaining 92% is distributed to winning farmers proportionally. The King takes his cut first - then victors divide the spoils.</div>
+</div>
+
+<!-- GRAIN REWARDS -->
+<div id="grain-rewards" class="section">
+  <h1>GRAIN Rewards</h1>
+  <p class="section-subtitle">The spoils of surviving the King's taxation.</p>
+
+  <p>When your crop is spared, you receive two things: your share of the loser pool in ETH, and newly minted GRAIN tokens. GRAIN is the Kingdom's native currency - scarce, burnable, and continuously supported by the Royal Treasury's buyback mechanism.</p>
+
+  <h2>How Much GRAIN You Earn</h2>
+  <p>Each round, GRAIN is freshly minted and distributed to farmers on the winning crop:</p>
+  <pre>Emission per round = 37,000 × √(pool / 0.01 ETH) × √(LAUNCH_PRICE / TWAP)   [cap: 500,000]</pre>
+  <p>Emission scales with the Kingdom's prosperity. More ETH deployed means more GRAIN minted per round - the realm grows richer as more farmers arrive. Seventy percent flows immediately to the winning farmers, proportional to their stake. The remaining thirty percent feeds the Revolt treasury, where it accumulates until peasant grievances overflow.</p>
+
+  <h2>The Treasury Buyback</h2>
+  <p>The Royal Treasury does not simply hoard tax revenue. A substantial portion is used to repurchase GRAIN from the open market and destroy it permanently. This is not charity - it is fiscal policy. As long as farmers work the land, the Treasury buys GRAIN. As long as the Treasury buys GRAIN, the price of GRAIN is supported from below.</p>
+
+  <p>The vault operates every 120 seconds, automatically, on-chain. No announcement. No discretion. No delays. When farmers farm, the Treasury buys.</p>
+</div>
+
+<!-- THE REVOLT -->
+<div id="revolt" class="section">
+  <h1>The Revolt</h1>
+  <p class="section-subtitle">Oppression breeds revolution. Revolution rewards the brave.</p>
+
+  <div class="lore-block">
+    <em>Even the most downtrodden peasant has a breaking point.</em> Every harvest, a portion of the realm's GRAIN flows not to farmers nor to the King, but into a hidden reserve - the Revolt Treasury. It fills silently, round by round, grievance by grievance. And then, without warning, it erupts.
+  </div>
+
+  <h2>How the Revolt Works</h2>
+  <p>Thirty percent of every round's GRAIN emission goes to the Revolt Treasury rather than farmers. This treasury accumulates continuously. At a hidden threshold - unknown to players, unpredictable in timing - the Revolt fires.</p>
+
+  <p>When the Revolt fires, <strong>all farmers on the winning crop</strong> share the entire Revolt Treasury in addition to their normal harvest - proportional to their stake on that crop. The more you deployed, the larger your share of the windfall. A revolution. A round that pays like no other.</p>
+
+  <div class="callout">
+    <strong>The timing is deliberately unknowable.</strong> The Revolt does not fire on a schedule. It uses cryptographic randomness to trigger unpredictably - the probability of revolt increases as the treasury fills, but the exact moment is never certain. You cannot predict it. You can only be present.
+  </div>
+
+  <h2>Why You Must Keep Farming</h2>
+  <p>The Revolt fires at a random moment. If you are not farming when it triggers, you cannot win it. Farmers who leave the fields - even briefly - risk missing the most lucrative event in the Kingdom. This is not an accident of design. The King's capriciousness keeps the peasants working.</p>
+
+  <p>Your serf, however, never leaves the fields.</p>
+
+  <h2>What the Revolt Pays</h2>
+  <p>The Revolt Treasury is denominated in GRAIN. Its value grows with the price of GRAIN - a revolt that fires early pays modestly; one that fires after a price run pays handsomely. At any meaningful game activity, a Revolt jackpot represents a significant multiple of a normal round's earnings.</p>
+
+  <h2>Revolt and Farming EV</h2>
+  <p>The thirty percent of emission flowing to the Revolt Treasury is not lost - it returns to farmers, just concentrated into jackpot events. Across many rounds, the expected GRAIN earnings from Revolt triggers equal exactly what would have been distributed directly. The Revolt does not reduce farming EV. It converts steady earnings into variance - punishment for inattention, reward for consistency.</p>
+</div>
+
+<!-- CASTLES -->
+<div id="castles" class="section">
+  <h1>Castles &amp; Keeps</h1>
+  <p class="section-subtitle">Six fortresses. Seize them. Fortify them. Defend them with your life.</p>
+
+  <p>Six castles are scattered across the Kingdom, each controlling a region of farmland. Any farmer can attempt to seize a castle by burning sufficient GRAIN - and any farmer currently holding a castle can be displaced by a larger GRAIN burn. Castles are not held by kindness; they are held by force.</p>
+
+  <p>Holding a castle earns a continuous share of regional ETH income - a slice of the King's own tax revenue, redirected to whoever controls the territory. The more castles you hold, the more the realm pays tribute to you.</p>
+
+  <h2>Castle Income &amp; Garrison</h2>
+  <p>Each of the six castles earns a share of a dedicated 0.5% fee from every round's loser pool, split garrison-weighted. To seize a castle, you burn GRAIN equal to the garrison cost - a pool-tied amount that guarantees the siege is always 10% profitable:</p>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Protection window</td><td>1 hour (30 rounds)</td></tr>
+    <tr><td>Garrison cost</td><td>Pool-tied: 90% of income during protection window</td></tr>
+    <tr><td>Siege profitability</td><td>Always 10% - built into formula</td></tr>
+    <tr><td>Siege frequency</td><td>Up to 24× per day per castle</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim)">The garrison formula is: <code>cost = pool × 0.0045 × 30 × 0.90 × 1e18 / lastTWAP</code>. No Chainlink oracle needed - USD cancels out.</p>
+
+  <div class="callout warning">
+    <strong>Castles reset on seizure.</strong> When a castle falls to a new lord, their garrison replaces the old one. There is no upgrade system - the only way to hold a castle is to outspend whoever holds it. Seize carefully. Reinforce aggressively. Because someone else is always watching your walls.
+  </div>
+
+  <p>Active castle warfare - lords seizing, outbidding, and losing their garrison GRAIN - creates continuous burns. The Kingdom rewards those who fight for what they hold.</p>
+</div>
+
+<!-- FACTIONS -->
+<div id="factions" class="section">
+  <h1>Factions</h1>
+  <p class="section-subtitle">Four noble houses. Twenty seats at the table. Allegiance has a price.</p>
+
+  <div class="lore-block">
+    No peasant survives the Kingdom alone. The wise swear allegiance to a noble house - one of the four great factions that have carved up the realm's politics, economics, and violence. Faction members farm together, fight together, and claim the Citadel together. <em>Or they die alone.</em>
+  </div>
+
+  <h2>The Four Factions</h2>
+  <p>Four factions compete for dominance. Each accepts no more than five sworn members - twenty total seats across the entire realm. These slots are finite. They fill up. They do not expand.</p>
+
+  <div class="callout"><strong>Why join early:</strong> Faction membership is limited by design. Slots fill. Latecomers beg for a seat or go without. The first to arrive choose their house freely. The rest take what remains.</div>
+
+  <h2>Swearing Allegiance</h2>
+  <p>Joining a faction is not free, and it is not reversible by hesitation. You burn GRAIN - not transfer, not stake, <em>burn</em> - to seal your oath. The ceremony is brief. The cost is permanent:</p>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Oath cost</td><td>Pool-tied - scales with game activity (≈100K-2M GRAIN)</td></tr>
+    <tr><td>Allegiance duration</td><td>3 days</td></tr>
+    <tr><td>Renewal cost</td><td>Same pool-tied formula at time of renewal</td></tr>
+    <tr><td>Maximum members per faction</td><td>5 wallets</td></tr>
+    <tr><td>Total seats in the realm</td><td>20 (across all 4 factions)</td></tr>
+  </table>
+
+  <p>To join, call <code>joinFaction(factionId)</code>. The GRAIN cost is dynamic - it equals 50% of one day's Citadel income at the current ETH-in-play level. At launch it's cheap (a few thousand GRAIN). As more ETH flows through the game, the cost rises proportionally. Your membership expires in exactly 3 days. If you do not renew, your allegiance lapses and your seat opens.</p>
+
+  <div class="callout warning"><strong>Allegiance is not a deposit.</strong> The GRAIN you burn to join a faction is destroyed permanently. It does not return when you leave. It does not transfer. It is gone. The Kingdom does not offer refunds.</div>
+
+  <h2>Benefits of Faction Membership</h2>
+  <ul>
+    <li><strong>+10% GRAIN</strong> on every round your crop survives while your allegiance is active</li>
+    <li><strong>+20% GRAIN</strong> if your faction dominates the current 12-hour epoch (most ETH deployed collectively) - combined bonus is <strong>1.30×</strong> base emission</li>
+    <li>Access to collective Citadel siege mechanics</li>
+    <li>Faction standings on the realm's leaderboard</li>
+  </ul>
+
+  <h2>Epoch Dominance</h2>
+  <p>Every 12 hours, an epoch concludes. The faction whose sworn members collectively deployed the most ETH across all farming rounds wins that epoch. Their members carry the +15% bonus into the next epoch, compounding their advantage. Dominance builds dominance.</p>
+
+  <p>Members whose allegiance has expired do not contribute to epoch totals. Dead factions shed members silently - three days of inactivity and the seats open again.</p>
+</div>
+
+<!-- CITADEL -->
+<div id="citadel" class="section">
+  <h1>The Citadel</h1>
+  <p class="section-subtitle">The seat of power. Hold it and the realm pays tribute. Lose it and burn.</p>
+
+  <div class="lore-block">
+    <em>The Citadel stands at the heart of the Kingdom</em> - a single fortress of supreme strategic importance. No individual farmer can take it. No lone lord can hold it. It falls only to coordinated faction action, and it yields ETH income to whoever controls it, every 120 seconds, for as long as it remains in their hands.
+  </div>
+
+  <h2>Seizing the Citadel</h2>
+  <p>To claim the Citadel, your faction must collectively contribute enough GRAIN to overwhelm its defenses. This GRAIN is burned - offered up as proof of commitment and destroyed in the siege. When the threshold is reached, the Citadel transfers to your faction automatically.</p>
+
+  <p>Each faction member calls <code>contributeToSiege(factionId, amount)</code> independently. Contributions accumulate across all members. The contract tracks each member's share - because when the Citadel falls, income is distributed proportionally to those who fought for it.</p>
+
+  <h2>Siege Cost</h2>
+  <p>The siege cost is pool-tied - it scales with the actual ETH flowing through the game, guaranteeing every successful siege is exactly 10% profitable:</p>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Siege cost formula</td><td><code>pool × 0.0045 × 720 × 0.90 × 1e18 / lastTWAP</code></td></tr>
+    <tr><td>Profitability guarantee</td><td>Always 10% - cost = 90% of one epoch's income</td></tr>
+    <tr><td>Minimum rounds</td><td>≥120 rounds completed before any faction can siege</td></tr>
+    <tr><td>Cost at launch (bots only)</td><td>~$28 total across faction</td></tr>
+    <tr><td>Cost at 38 organics / 86×</td><td>~1.93M GRAIN ($1,657 total, ~$331/member)</td></tr>
+  </table>
+
+  <p>The 120-round minimum prevents a well-funded outsider from buying GRAIN on day one and immediately seizing the Citadel. The Citadel should be earned through farming. After 120 rounds (~4 hours), the pool-tied formula takes over and the cost self-calibrates forever.</p>
+
+  <div class="callout warning"><strong>All contributed GRAIN is permanently burned,</strong> whether your siege succeeds or fails mid-attempt. If a rival faction completes their siege before yours, your burned GRAIN is not returned. Plan your assault carefully and execute decisively.</div>
+
+  <h2>Citadel Income</h2>
+  <p>Each settled round, KingdomGame sends <strong>0.5% of the loser pool</strong> directly to the Citadel contract:</p>
+  <pre><span class="cmt">// On-chain formula - runs every settled round</span>
+citadelShare = loserPool × CITADEL_BPS / 10_000   <span class="cmt">// CITADEL_BPS = 50 = 0.5%</span>
+citadel.addIncome{value: citadelShare}()           <span class="cmt">// pushed by KingdomGame</span>
+
+<span class="cmt">// Income accumulates by contributor share:</span>
+incomePerShare += citadelShare × 1e18 / totalContributed
+<span class="cmt">// Claim any time via:</span>
+citadel.claimIncome()                              <span class="cmt">// pull-payment, ETH to caller</span></pre>
+  <p>Income accrues proportionally to each contributor's GRAIN burned in the siege that claimed the Citadel. The more GRAIN your faction member burned to take it, the larger their cut of every round's tribute:</p>
+  <table>
+    <tr><th>Active farmers</th><th>Citadel income (ETH/day)</th><th>USD/day</th><th>Per contributor (5 members)</th></tr>
+    <tr><td>5 (~$10/round each)</td><td>0.081 ETH</td><td>~$188</td><td>~$38/day</td></tr>
+    <tr><td>15 (~$10/round each)</td><td>0.243 ETH</td><td>~$565</td><td>~$113/day</td></tr>
+    <tr><td>30 (~$10/round each)</td><td>0.486 ETH</td><td>~$1,130</td><td>~$226/day</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim)">Estimates assume ~$10/round per farmer at $2,300/ETH. If no faction holds the Citadel, income accumulates in the contract for up to 48h then routes to the Vault.</p>
+
+  <div class="callout green"><strong>The 10% profit is now a hard guarantee.</strong> The 24h protection window ensures the holding faction earns the full epoch before any transfer. Siege at today's pool size, hold through a price spike, earn income on tomorrow's larger pool. After the first epoch is paid back, every additional round is pure tribute.</div>
+
+  <h2>Unclaimed Tribute</h2>
+  <p>Before any faction seizes the Citadel, tribute accumulates unclaimed in the contract. The first faction to successfully complete a siege claims this accumulated ETH - up to 48 hours of retroactive tribute - in addition to ongoing income. After the initial 48-hour window, unclaimed accumulated fees are forfeited. Seize early.</p>
+
+  <h2>The 24-Hour Protection Window</h2>
+  <p>Every time the Citadel transfers, a <strong>24-hour protection window</strong> begins immediately. During this window, rival factions can still contribute GRAIN to siege (it burns immediately and permanently) - but the Citadel will not transfer until the window expires.</p>
+
+  <p>The first rival faction to accumulate the siege threshold during protection is <strong>queued</strong>. Their siege executes the moment protection expires - via a public call to <code>executePendingSiege()</code> that anyone can trigger. Only one faction can hold the queue slot; first to threshold wins it.</p>
+
+  <table>
+    <tr><th>State</th><th>Mechanic</th></tr>
+    <tr><td>Protected (first 24h)</td><td>Rival contributions burn; first faction to threshold is queued</td></tr>
+    <tr><td>Protection expired + queue full</td><td>Anyone calls <code>executePendingSiege()</code> → Citadel transfers</td></tr>
+    <tr><td>Protection expired + no queue</td><td>Next faction to reach threshold triggers transfer immediately</td></tr>
+    <tr><td>GRAIN burned during protection</td><td>Burned permanently - no refund, even if your faction doesn't win the queue</td></tr>
+  </table>
+
+  <p style="font-size:13px;color:var(--text-dim)">This is what makes the 10% profitability guarantee real: the protection window ensures the holding faction earns the full 24-hour epoch of income before any transfer can occur.</p>
+
+  <h2>Defending What You Hold</h2>
+  <p>Defense is preemptive. Watch the siege accumulation of rival factions via <code>factionContrib[fid]</code> and act before they fill the queue slot. If a rival queues during your protection, you have until the window expires to either accept the loss or prepare your counter-siege. The price of complacency is a ruin you once called home - but now you at least get 24 hours to say goodbye.</p>
+</div>
+
+<!-- THE REAPER -->
+<div id="king" class="section">
+  <h1>The Reaper</h1>
+  <p class="section-subtitle">Crown the realm's greatest farmer. Every twelve hours, a new Reaper rises.</p>
+
+  <p>Every twelve hours, the season's results are tallied. The farmer who earned the most GRAIN through active farming in that window is crowned The Reaper - and receives the entire accumulated Reaper Prize in ETH. Not a share. All of it.</p>
+
+  <h2>The Rules of Succession</h2>
+  <ul>
+    <li>The 12-hour season resets on a rolling clock. A new competition begins the moment the last one ends.</li>
+    <li>Rankings are based solely on GRAIN earned from active farming within the current window. Past glory is irrelevant. Yesterday's Reaper must earn the crown again today.</li>
+    <li>Only active farmers in the current window can qualify. GRAIN held in a wallet does not count - only GRAIN earned this season from the fields.</li>
+  </ul>
+
+  <h2>The Reaper Prize</h2>
+  <p>0.5% of every round's loser pool flows into the Reaper Prize pot. Over a 12-hour season, this accumulates into a meaningful ETH bounty. The prize scales directly with game activity - the more farmers in the realm, the more every round generates, and the larger the eventual prize.</p>
+  <table>
+    <tr><th>Active farmers</th><th>Est. 12h prize (ETH)</th><th>USD (at launch)</th></tr>
+    <tr><td>5</td><td>0.040 ETH</td><td>~$94</td></tr>
+    <tr><td>15</td><td>0.122 ETH</td><td>~$283</td></tr>
+    <tr><td>30</td><td>0.243 ETH</td><td>~$565</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim)">Prize estimates at launch price. Assumes farmers deploy approximately $10/round. Actual prizes vary with activity and stake sizes - these are illustrative, not guaranteed.</p>
+
+  <p>The crowning is public. Every twelve hours, a new Reaper is proclaimed on-chain - wallet address, GRAIN earned, prize claimed. The realm knows who rules the fields.</p>
+</div>
+
+<!-- ROYAL DECREE (CROP BOOST) -->
+<div id="boost" class="section">
+  <h1>Royal Decree</h1>
+  <p class="section-subtitle">Invoke the King's favor. Increase your harvest from the spared crop.</p>
+
+  <p>For those with enough GRAIN to burn, the King can be persuaded - through tribute, flattery, or outright bribery - to enrich your harvest should your crop be spared. A Royal Decree does not change which crop survives taxation. The King's choice remains capricious and random. But when your crop is selected, a Decree ensures you reap a greater share of the GRAIN emission from that round.</p>
+
+  <p>Boosts are pool-proportional - they scale with game activity. A Quick Boost lasts one round; Extended runs 24 rounds; Campaign holds for 72. All are burned on activation.</p>
+
+  <table>
+    <tr><th>Decree tier</th><th>GRAIN burned</th><th>GRAIN multiplier if your crop wins</th></tr>
+    <tr><td>Quick Boost</td><td>~25,000 GRAIN (pool-scaled)</td><td>3× emission share - 1 round</td></tr>
+    <tr><td>Extended Boost</td><td>~200,000 GRAIN (pool-scaled)</td><td>2× emission share - 24 rounds</td></tr>
+    <tr><td>Campaign Boost</td><td>~500,000 GRAIN (pool-scaled)</td><td>1.5× emission share - 72 rounds</td></tr>
+  </table>
+
+  <ul>
+    <li>Quick applies to your next round only. Extended runs for 24 rounds. Campaign holds for 72 - one active boost per wallet at a time</li>
+    <li>Your multiplier applies to your emission share - a faction member with +10% who activates a 2× Extended Boost earns 2× their boosted share on every winning round for 24 rounds</li>
+    <li>The GRAIN you burn is gone regardless of whether your crop survives. The King does not issue refunds.</li>
+  </ul>
+
+  <div class="callout">Boosts are most potent when the stakes are highest - late in a Reaper season, when a few thousand extra GRAIN can shift the standings. The cost of a well-timed Quick Boost is often dwarfed by what it can win.</div>
+</div>
+
+<!-- STRATEGY -->
+<div id="strategy" class="section">
+  <h1>Strategy</h1>
+  <p class="section-subtitle">The Kingdom rewards patience, coordination, and timing. The rest is variance.</p>
+
+  <h2>Crop Allocation</h2>
+  <table>
+    <tr><th>Style</th><th>Crops farmed</th><th>Character</th></tr>
+    <tr><td><strong>Concentrated</strong></td><td>1-2 crops</td><td>High variance. Big wins. Long dry spells. Not for the faint-hearted.</td></tr>
+    <tr><td><strong>Spread</strong></td><td>All 10 crops</td><td>Guaranteed participation every round. Steady GRAIN, lower peaks.</td></tr>
+    <tr><td><strong>Balanced</strong></td><td>3-5 crops</td><td>The working noble's approach. Win 30-50% of rounds meaningfully.</td></tr>
+  </table>
+
+  <h2>Capital and Runway</h2>
+  <ul>
+    <li><strong>Size for survival:</strong> The Kingdom taxes you whether you win or lose. Plan your capital for at least 48 hours of continuous farming - the early days matter most.</li>
+    <li><strong>Early allegiance:</strong> Faction slots fill. Faction bonuses compound. Join your house before the realm fills up. The GRAIN required to join is cheap when GRAIN is cheap.</li>
+    <li><strong>The hour-8 window:</strong> Those purchasing GRAIN directly from the open market should wait until the anti-sniper edict expires at hour 8. Before then, the King's exit tax applies.</li>
+  </ul>
+
+  <h2>GRAIN</h2>
+  <p>GRAIN is the Kingdom's currency, its fuel, and its prize. Those who accumulate early and hold through the realm's growth era see the greatest returns. Those who sell immediately still profit - the Royal Treasury's buyback is relentless - but they leave the greater spoils for others.</p>
+
+  <p>When you sell, sell in stages. The realm's liquidity pool is small and prices move fast in both directions. A lord who exits all at once moves the market against themselves.</p>
+
+  <h2>The Reaper</h2>
+  <p>At fifteen or more active farmers, the Reaper Prize rivals a full day of farming profits - paid every twelve hours. If you find yourself consistently near the top of the leaderboard, redirect resources toward the competition. A well-timed boost in the final rounds of a season costs less than the prize is worth.</p>
+
+  <h2>The Revolt</h2>
+  <p>No one knows when it fires. That is the point. The farmer who farms constantly - or whose serf never rests - is always in position to claim it. The jackpot goes to whoever wins the right round. Be in the fields. Always.</p>
+
+  <div style="background:rgba(224,82,82,0.06);border:1px solid rgba(224,82,82,0.2);border-radius:8px;padding:14px 18px;font-size:13px;color:var(--text-dim);margin:28px 0;">
+    <strong style="color:var(--red)">Risk notice:</strong> Farming in the Kingdom involves real financial risk. Nine of ten crops are taxed each round. You profit when GRAIN appreciates faster than your ETH losses accumulate - this is not guaranteed. Deploy only what you are prepared to lose entirely. The King is not responsible for your debts.
+  </div>
+</div>
+
+<!-- SUPPLY -->
+<div id="supply" class="section">
+  <h1>Token Supply</h1>
+  <p class="section-subtitle">GRAIN is not scarce by cap. It is scarce by demand.</p>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Maximum supply</td><td>10,000,000,000 GRAIN</td></tr>
+    <tr><td>Premint - LP seed</td><td>200,000,000 GRAIN (2% of max supply)</td></tr>
+    <tr><td>Staking rewards</td><td>Not preminted - funded when Phase 2 staking launches</td></tr>
+    <tr><td>Launch price</td><td>~$0.00001 / GRAIN (~$2,300 mcap at launch)</td></tr>
+    <tr><td>Emission formula</td><td>37,000 × √(pool/0.01 ETH) × √(LAUNCH_PRICE/TWAP) per round [cap: 500,000]</td></tr>
+  </table>
+  <p>GRAIN is minted every round when a crop survives. There is no fixed schedule - emission scales with activity. The Royal Treasury continuously buys and burns GRAIN, providing baseline demand against which all supply is measured.</p>
+</div>
+
+<!-- VAULT -->
+<div id="vault" class="section">
+  <h1>Vault &amp; Taxation</h1>
+  <p class="section-subtitle">Nine-tenths of all ETH harvested flows through the Royal Treasury. Most of it buys GRAIN.</p>
+  <p>The vault is the mechanical heart of the Kingdom's economy. Every round, a percentage of the loser pool is routed to the vault contract, which executes a market buy of GRAIN on Uniswap and sends the acquired tokens to a burn address. This happens automatically, every 120 seconds, without human intervention.</p>
+  <h2>Flat Rate - No Ramp</h2>
+  <p>The vault runs at its full 6.5% rate from round one. No warmup, no grace period. The Kingdom's buyback pressure begins immediately:</p>
+  <table>
+    <tr><th>Fee</th><th>Rate</th><th>Destination</th></tr>
+    <tr><td>Vault buyback</td><td>6.5%</td><td>Market buys GRAIN → burns</td></tr>
+    <tr><td>Admin fee</td><td>0%</td><td>Protocol keeps nothing</td></tr>
+  </table>
+  <p>Every ETH the vault receives is converted to GRAIN via Uniswap and sent to the burn address in the same transaction. No accumulation, no delay, no admin capture.</p>
+  <pre><span class="cmt">// Vault - constant 6.5%, no ramp, zero admin cut</span>
+<span class="kw">uint256 public constant</span> VAULT_BPS = <span class="num">650</span>;
+<span class="kw">uint256 public constant</span> ADMIN_BPS = <span class="num">0</span>;</pre>
+</div>
+
+<!-- PROTOCOL REVENUE -->
+<div id="revenue" class="section">
+  <h1>Protocol Revenue</h1>
+  <p class="section-subtitle">Where the tax goes beyond the vault.</p>
+  <table>
+    <tr><th>Fee</th><th>Rate</th><th>Destination</th></tr>
+    <tr><td>Vault (Treasury buyback)</td><td>6.5% flat</td><td>GRAIN buyback → permanent burn</td></tr>
+    <tr><td>King's Household (Admin)</td><td>0%</td><td>Protocol keeps nothing</td></tr>
+    <tr><td>Castle Income</td><td>0.5%</td><td>Garrison-weighted across 6 castles</td></tr>
+    <tr><td>Citadel Tribute</td><td>0.5%</td><td>Faction holding the Citadel</td></tr>
+    <tr><td>Reaper Prize</td><td>0.5%</td><td>12h Reaper prize pot</td></tr>
+  </table>
+  <p>All fees are drawn from the loser pool only. Winners keep their stake plus their share of the surviving loser pool.</p>
+</div>
+
+<!-- BURNS -->
+<div id="burns" class="section">
+  <h1>Burn Sinks</h1>
+  <p class="section-subtitle">Every act of ambition in the Kingdom burns GRAIN.</p>
+  <table>
+    <tr><th>Action</th><th>GRAIN burned</th><th>Recurring?</th></tr>
+    <tr><td>Faction oath</td><td>Pool-tied (~100K-2M GRAIN)</td><td>Every 3 days per member</td></tr>
+    <tr><td>Citadel siege</td><td>Pool-tied (~500K-5M GRAIN, 24× castle formula)</td><td>Each assault (1/day max)</td></tr>
+    <tr><td>Castle garrison</td><td>Pool-tied (~10K-200K GRAIN, 1h protection)</td><td>Every siege (up to 24/day per castle)</td></tr>
+    <tr><td>Crop Boost - Quick</td><td>~25K GRAIN (pool-scaled)</td><td>Per 1-round boost</td></tr>
+    <tr><td>Crop Boost - Extended</td><td>~200K GRAIN (pool-scaled)</td><td>Per 24-round boost</td></tr>
+    <tr><td>Crop Boost - Campaign</td><td>~500K GRAIN (pool-scaled)</td><td>Per 72-round boost</td></tr>
+    <tr><td>Vault buybacks</td><td>Continuous - 6.5% of every loser pool</td><td>Every round</td></tr>
+  </table>
+</div>
+
+<!-- THE MATH -->
+<div id="economics" class="section">
+  <h1>The Math</h1>
+  <p class="section-subtitle">Why price goes up with players - every formula, explained for degens.</p>
+
+  <h2>The Short Version</h2>
+  <p>More players → bigger ETH pool → more ETH burned on buybacks → GRAIN supply shrinks → price up.<br>
+  That's it. Everything below is the math that makes that loop impossible to game.</p>
+  <p style="color:var(--text-dim);font-size:13px;margin-top:-8px;"><strong style="color:var(--text-bright);">Note:</strong> Every number on this page assumes <strong>zero price speculators</strong> - only active farmers. No one buying GRAIN without farming, no one holding for price appreciation. This is the floor. Any speculation adds to it.</p>
+
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin:24px 0;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--text-dim);">
+      <span style="background:rgba(201,168,76,0.12);border:1px solid var(--gold-dim);color:var(--gold);padding:6px 14px;border-radius:20px;font-weight:600;">Players bet ETH</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:var(--bg2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;">GRAIN minted for winners</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:var(--bg2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;">6.5% of each pool → vault</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:rgba(76,175,110,0.1);border:1px solid #2d6b44;color:var(--green);padding:6px 14px;border-radius:20px;font-weight:600;">Vault buys + burns GRAIN</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:rgba(201,168,76,0.12);border:1px solid var(--gold-dim);color:var(--gold);padding:6px 14px;border-radius:20px;font-weight:600;">Price up → repeat</span>
+    </div>
+  </div>
+
+  <h2>1. Emission Formula</h2>
+  <p>Every round, winners earn GRAIN. The amount is not fixed - it adjusts automatically:</p>
+
+  <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:18px 22px;margin:16px 0;font-family:monospace;font-size:15px;color:var(--text-bright);">
+    emission = 37,000 × √(pool / 0.01 ETH) × √(LAUNCH_PRICE / TWAP_PRICE)
+  </div>
+
+  <p>Two things adjust it:</p>
+  <ul style="margin:12px 0 12px 20px;display:flex;flex-direction:column;gap:8px;">
+    <li><strong style="color:var(--text-bright);">Pool size (√pool):</strong> More players → bigger pool → more GRAIN printed. Rewards scale with activity.</li>
+    <li><strong style="color:var(--text-bright);">Price factor (√launchPrice/TWAP):</strong> As price rises, emission shrinks automatically. At 10× price, emission is ~3× lower. The system doesn't print free money when GRAIN is expensive.</li>
+  </ul>
+
+  <p style="color:var(--text-dim);font-size:14px;">Hard cap: 500,000 GRAIN/round. Spike protection: 2× trailing 20-round median. TWAP floor: 10% of launch price (prevents oracle manipulation).</p>
+
+  <h2>2. The Launch Burn</h2>
+  <p>Before the game opened to players, the deployer wallet bought GRAIN from the LP and burned it all to the dead address - permanently. This isn't a team reserve. It's gone.</p>
+
+  <div style="background:rgba(76,175,110,0.07);border:1px solid #2d6b44;border-radius:8px;padding:16px 20px;margin:16px 0;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+    <div><span style="font-size:28px;font-weight:700;color:var(--green);">~70M GRAIN</span><br><span style="color:var(--text-dim);font-size:13px;">burned at launch</span></div>
+    <div style="color:var(--gold-dim);font-size:20px;">·</div>
+    <div><span style="font-size:28px;font-weight:700;color:var(--green);">34%</span><br><span style="color:var(--text-dim);font-size:13px;">of initial LP supply, gone</span></div>
+    <div style="color:var(--gold-dim);font-size:20px;">·</div>
+    <div><span style="font-size:28px;font-weight:700;color:var(--green);">3×</span><br><span style="color:var(--text-dim);font-size:13px;">daily emission rate, in one shot</span></div>
+  </div>
+  <p style="color:var(--text-dim);font-size:14px;">Verifiable on Basescan: transfer from the deployer wallet to <code style="font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:4px;">0x000...dEaD</code>.</p>
+
+  <h2>3. The Vault Buyback (Always On)</h2>
+  <p>6.5% of every losing player's ETH goes to the vault. The vault doesn't hold it - it immediately buys GRAIN on Uniswap and burns it.</p>
+
+  <table>
+    <tr><th>Pool size</th><th>Vault ETH/round</th><th>GRAIN burned/round (est.)</th></tr>
+    <tr><td>0.03 ETH (few players)</td><td>0.00195 ETH</td><td>~100,900 GRAIN</td></tr>
+    <tr><td>0.10 ETH (6 players)</td><td>0.0065 ETH</td><td>~336,000 GRAIN</td></tr>
+    <tr><td>0.50 ETH (10+ players)</td><td>0.0325 ETH</td><td>~1,680,000 GRAIN</td></tr>
+    <tr><td>2.00 ETH (38 players)</td><td>0.130 ETH</td><td>~6,720,000 GRAIN</td></tr>
+  </table>
+  <p style="color:var(--text-dim);font-size:13px;margin-top:8px;">Every single round. Permanently. The ETH doesn't come back. More players = bigger pool = more ETH burned.</p>
+
+  <h2>4. The Green Zone</h2>
+  <p>The green zone is where two things are true simultaneously: <strong style="color:var(--green);">farming is profitable</strong> (expected GRAIN earnings beat the 6.5% vault fee) <em>and</em> <strong style="color:var(--green);">the system is deflationary</strong> (more GRAIN burned than minted). Every player who joins pushes the green zone higher and wider.</p>
+
+  <p style="margin-top:16px;">The game launches deflationary from round 1, and every player who joins deepens it. Here's every scenario across the game's price progression:</p>
+  <p style="color:var(--text-dim);font-size:13px;margin-bottom:8px;">Assumes ~$4/round per player. Vault burns are always active. Gameplay sinks (castles, citadel, factions) are additional burns on top. As token price rises, vault burns <em>fewer GRAIN per ETH</em> - but gameplay sinks ramp up to compensate.</p>
+
+  <table>
+    <tr><th>Stage</th><th>Mcap</th><th>GRAIN minted/day</th><th>Vault buybacks/day</th><th>Gameplay sinks/day</th><th>Total burned/day</th><th>Ratio</th></tr>
+    <tr><td>Launch</td><td>~$2K</td><td>23.8M</td><td style="color:var(--green);">87.1M</td><td>-</td><td style="color:var(--green);">87.1M</td><td style="color:var(--green);">🔥 3.7×</td></tr>
+    <tr><td>3 players</td><td>~$10K</td><td>14.1M</td><td style="color:var(--green);">30.5M</td><td>~500K</td><td style="color:var(--green);">~31M</td><td style="color:var(--green);">🔥 2.2×</td></tr>
+    <tr><td>10 players</td><td>~$40K</td><td>10.0M</td><td style="color:var(--green);">15.2M</td><td>~1.5M</td><td style="color:var(--green);">~16.7M</td><td style="color:var(--green);">🔥 1.7×</td></tr>
+    <tr><td>38 players</td><td>~$170K</td><td>8.3M</td><td style="color:var(--green);">10.6M</td><td>~7.0M</td><td style="color:var(--green);">~17.6M</td><td style="color:var(--green);">🔥 2.1×</td></tr>
+    <tr><td>65 players</td><td>~$270K</td><td>8.5M</td><td style="color:var(--green);">11.1M</td><td>~12.0M</td><td style="color:var(--green);">~23.1M</td><td style="color:var(--green);">🔥 2.7×</td></tr>
+    <tr><td>100 players</td><td>~$400K</td><td>8.6M</td><td style="color:var(--green);">11.3M</td><td>~18.0M</td><td style="color:var(--green);">~29.3M</td><td style="color:var(--green);">🔥 3.4×</td></tr>
+  </table>
+
+  <p style="margin-top:14px;color:var(--text-dim);font-size:14px;">The ratio dips slightly at the 10-player stage because price typically rises faster than the player pool in early growth - meaning the vault buys fewer GRAIN per ETH. But that's also exactly when gameplay fills in: more castle sieges, faction joins, and Citadel activity ramp up together. Notice that emission converges to a natural floor of ~8.5M/day at scale - the pool and price growth offset each other in the formula. At that point, total burns are running at 3.4× emission and climbing. The deeper the game goes, the more deflationary it becomes.</p>
+
+  <div style="background:rgba(76,175,110,0.07);border:1px solid #2d6b44;border-radius:8px;padding:16px 20px;margin:20px 0;">
+    <p style="margin:0;color:var(--green);font-weight:600;">What about sell pressure from winners?</p>
+    <p style="margin:8px 0 0;color:var(--text-dim);font-size:14px;">Winners receive GRAIN and many will sell immediately. That's expected. Even if every winner sells 100% of their GRAIN the moment they receive it, the vault is burning 3.7× more GRAIN than is minted - net supply still decreases every single round. Seller pressure reduces the <em>price impact</em> per unit burned, not whether the supply is shrinking. The supply always shrinks.</p>
+  </div>
+
+  <div style="background:rgba(76,175,110,0.07);border:1px solid #2d6b44;border-radius:8px;padding:16px 20px;margin:20px 0;">
+    <p style="margin:0;color:var(--green);font-weight:600;">The green zone expands with every player.</p>
+    <p style="margin:6px 0 0;color:var(--text-dim);font-size:14px;">Early players lock in cheap GRAIN and help create the buyback pressure that makes later players' GRAIN worth more. It's a rising tide - not a fixed pie.</p>
+  </div>
+
+  <h2>5. Burn Sinks Will Be Used - By Rational Self-Interest</h2>
+  <p>Castles and the Citadel aren't just gameplay flavor. They're <strong style="color:var(--gold);">guaranteed 10% ROI positions</strong> enforced by the smart contract formula. Rational players WILL use them - not because we hope they will, but because leaving money on the table isn't rational.</p>
+
+  <h3>Why castles are always worth holding</h3>
+  <p>The garrison cost formula is built around a single guarantee:</p>
+  <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:16px 20px;margin:12px 0;font-size:14px;">
+    <strong style="color:var(--text-bright);">Garrison cost = 90% of expected income during protection window</strong><br>
+    <span style="color:var(--text-dim);font-size:13px;margin-top:4px;display:block;">Every castle siege is exactly 10% profitable at current activity levels. The formula self-calibrates to pool size and GRAIN price every round - no human sets these numbers. If activity drops during your protection window, income drops too. If activity rises, it pays more. The 10% is the expectation at the moment you garrison, not a hard guarantee.</span>
+  </div>
+  <p>If you can afford to garrison a castle, doing so is always +10% EV. If you hold it through the protection window, you come out ahead. If someone sieges you, they paid 10% more than your income was worth - and they now face the same guarantee. Castles create a continuous GRAIN burn loop driven entirely by financial self-interest.</p>
+
+  <h3>Why the Citadel is always worth seizing</h3>
+  <p>Same logic. Citadel siege cost = 90% of expected epoch income. One successful faction siege pays back 111% of what it cost. Factions that hold the Citadel earn ETH tribute every round. Factions that siege it are guaranteed profitable. The Citadel creates the largest single burn event in the game - and rational factions will always trigger it.</p>
+
+  <p style="margin-top:14px;">The burn sinks aren't a hope. They're a guaranteed arbitrage built into the math. As the pool grows, so do the potential earnings - and so do the burn costs that capture them.</p>
+
+  <p style="margin-top:14px;">Here's what that looks like at different scales:</p>
+
+  <table>
+    <tr><th>Stage</th><th>Mcap</th><th>Emitted/day</th><th>Castle cost/siege</th><th>Citadel cost/siege</th><th>Faction join</th><th>Total burned/day</th><th>Net</th></tr>
+    <tr><td>Launch</td><td>~$2K</td><td>23.8M</td><td>226K</td><td>-</td><td>-</td><td style="color:var(--green);">87.1M (vault)</td><td style="color:var(--green);">🔥 -63.3M</td></tr>
+    <tr><td>3 players</td><td>~$10K</td><td>14.1M</td><td>79K</td><td>1.9M</td><td>1.1M</td><td style="color:var(--green);">~31M</td><td style="color:var(--green);">🔥 -16.9M</td></tr>
+    <tr><td>10 players</td><td>~$40K</td><td>10.0M</td><td>40K</td><td>950K</td><td>527K</td><td style="color:var(--green);">~16.7M</td><td style="color:var(--green);">🔥 -6.7M</td></tr>
+    <tr><td>38 players</td><td>~$170K</td><td>8.3M</td><td>28K</td><td>663K</td><td>368K</td><td style="color:var(--green);">~17.6M</td><td style="color:var(--green);">🔥 -9.3M</td></tr>
+    <tr><td>65 players</td><td>~$270K</td><td>8.5M</td><td>29K</td><td>693K</td><td>385K</td><td style="color:var(--green);">~23.1M</td><td style="color:var(--green);">🔥 -14.6M</td></tr>
+    <tr><td>100 players</td><td>~$400K</td><td>8.6M</td><td>29K</td><td>705K</td><td>392K</td><td style="color:var(--green);">~29.3M</td><td style="color:var(--green);">🔥 -20.7M</td></tr>
+  </table>
+  <p style="color:var(--text-dim);font-size:13px;margin-top:8px;">Costs are pool-tied (formula: <code style="font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px;">pool × multiplier / GRAIN_price</code>) - they scale with ETH activity automatically. As token price rises, per-event GRAIN costs decrease, but USD costs increase proportionally. The vault burns <em>every single round</em> regardless of gameplay activity.</p>
+
+  <h2>6. The Royal Hoard (Recurring Catalyst)</h2>
+  <p>30% of every round's emission flows to the Royal Hoard - not distributed to players, but held in reserve for a jackpot event. The Hoard isn't a burn sink (GRAIN redistributes to winners, not destroyed), but it creates something equally valuable: <strong style="color:var(--gold);">recurring FOMO events</strong> that bring players back every round.</p>
+  <ul style="margin:12px 0 12px 20px;display:flex;flex-direction:column;gap:6px;">
+    <li>Floor before fire possible: <strong style="color:var(--text-bright);">2,000,000 GRAIN</strong></li>
+    <li>Probability above floor: <strong style="color:var(--text-bright);">0.27% per round</strong></li>
+    <li>Expected first fire: <strong style="color:var(--text-bright);">~19 hours after launch</strong> (faster with more players)</li>
+    <li>When it fires: entire treasury → winners of that round - a massive windfall, concentrated</li>
+  </ul>
+  <p style="color:var(--text-dim);font-size:14px;">Every round is potentially the round it fires. Winners who are farming when it fires receive a multiple of normal earnings. The player who farms consistently - or whose serf never rests - is always in position to claim it.</p>
+
+  <h2>7. Why More Players Is Better For Everyone</h2>
+  <p>Most games are zero-sum: a bigger crowd splits the same prize smaller. The Kingdom isn't. Here's why every new player expands the rewards pie rather than shrinking your slice.</p>
+
+  <h3>Farming rewards don't dilute - they appreciate</h3>
+  <p>You earn GRAIN, but GRAIN's value rises as players join. Here's the math at three stages:</p>
+
+  <table>
+    <tr><th>Players</th><th>GRAIN/round (total)</th><th>Vault burns/round</th><th>GRAIN price est.</th><th>USD value of 10K GRAIN</th></tr>
+    <tr><td>3 players</td><td>~64,000</td><td>~100,900</td><td>$0.00001 (1×)</td><td>$0.10</td></tr>
+    <tr><td>10 players</td><td>~117,000</td><td>~336,000</td><td>$0.0001 (10×)</td><td>$1.00</td></tr>
+    <tr><td>38 players</td><td>~228,000</td><td>~1,300,000</td><td>$0.00086 (86×)</td><td>$8.60</td></tr>
+  </table>
+
+  <p style="margin-top:12px;">Yes - as more players join, your raw GRAIN per round may shrink slightly (more competition). But the vault is burning GRAIN faster, price is rising faster, and your GRAIN is worth <em>dramatically</em> more in USD terms. A player farming at 38 players earns <strong style="color:var(--gold);">86× the dollar value</strong> per GRAIN vs. a player at launch.</p>
+  <p style="color:var(--text-dim);font-size:13px;margin-top:6px;">Price estimates derived from vault burn pressure and emission balance at each player/pool stage - same formulas used throughout this page, not picked to fit the narrative.</p>
+
+  <h3>Each player adds to the vault, not just the competition</h3>
+  <p>Every player - winner or loser - contributes 6.5% of their stake to the vault every round. That's not lost. It becomes buyback pressure. A player who loses every single round is still making existing GRAIN holders richer by feeding the vault.</p>
+
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin:20px 0;">
+    <p style="margin:0 0 10px;font-size:14px;color:var(--text-dim);">Example: 10 players at 0.01 ETH/round</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;">
+      <span style="background:var(--bg2);border:1px solid var(--border);padding:5px 12px;border-radius:16px;">Total pool: 0.10 ETH</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:var(--bg2);border:1px solid var(--border);padding:5px 12px;border-radius:16px;">0.0065 ETH → vault</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:rgba(76,175,110,0.1);border:1px solid #2d6b44;color:var(--green);padding:5px 12px;border-radius:16px;">~336,000 GRAIN burned</span>
+      <span style="color:var(--gold-dim);">→</span>
+      <span style="background:rgba(201,168,76,0.12);border:1px solid var(--gold-dim);color:var(--gold);padding:5px 12px;border-radius:16px;">Every round, forever</span>
+    </div>
+  </div>
+
+  <h3>The Royal Hoard jackpot fires more often</h3>
+  <p>30% of emission accumulates in the Royal Hoard. More players = more emission = hoard fills faster = jackpot events more frequent. Expect ~1 fire/day at launch; multiple fires per day at scale. Each fire concentrates a massive GRAIN payout into a single round - rewarding consistent players and creating volume spikes that make the token visible on DexScreener.</p>
+
+  <h3>The emission cap is much higher than you think</h3>
+  <p>Emission is capped at 500,000 GRAIN/round. At launch (small pool), actual emission is ~32,000/round - well below the cap. As the pool grows with more players, emission climbs toward the cap. The cap was set at 13× launch emission, leaving enormous room for growth before it binds.</p>
+
+  <table>
+    <tr><th>Pool size</th><th>Emission/round</th><th>% of cap used</th></tr>
+    <tr><td>0.03 ETH (3 players)</td><td>~32,000</td><td>6.4%</td></tr>
+    <tr><td>0.10 ETH (10 players)</td><td>~58,000</td><td>11.6%</td></tr>
+    <tr><td>0.50 ETH (50 players)</td><td>~131,000</td><td>26.2%</td></tr>
+    <tr><td>2.00 ETH (200 players)</td><td>~262,000</td><td>52.4%</td></tr>
+    <tr><td>5.78 ETH (578 players)</td><td>~500,000</td><td>100% - cap hits here</td></tr>
+  </table>
+  <p style="margin-top:10px;color:var(--text-dim);font-size:14px;">At cap, emission is fixed but vault buybacks keep growing with the pool. The system becomes increasingly deflationary at scale.</p>
+
+  <h2>8. Bigger Bets. More Wallets. Better Math.</h2>
+  <p>Two questions degens always ask: <em>"what if player count stalls but people just bet more?"</em> and <em>"what if I run multiple wallets?"</em> Both make the mechanics stronger, not weaker.</p>
+
+  <h3>Bigger bets improve deflation, not emission</h3>
+  <p>The vault burns ETH <strong>linearly</strong> with pool size. Emission grows by the <strong>square root</strong> of pool size. Double the ETH in the pool and vault burns double - but emission only grows by 41%. The larger the bets, the better the burn ratio.</p>
+
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:16px 0;font-size:14px;">
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div><span style="color:var(--text-dim);">Normal stakes</span><br><strong style="color:var(--text-bright);">Vault burns 2.2× emission</strong></div>
+      <div style="color:var(--gold-dim);font-size:20px;align-self:center;">→</div>
+      <div><span style="color:var(--text-dim);">Double the stakes</span><br><strong style="color:var(--green);">Vault burns 3.1× emission</strong></div>
+      <div style="color:var(--gold-dim);font-size:20px;align-self:center;">→</div>
+      <div><span style="color:var(--text-dim);">10× the stakes</span><br><strong style="color:var(--green);">Vault burns 7.0× emission</strong></div>
+    </div>
+    <p style="margin:10px 0 0;color:var(--text-dim);font-size:13px;">Same number of players. More ETH per round. Strictly better for everyone holding GRAIN.</p>
+  </div>
+
+  <h3>Wallets are players - multi-wallet is multi-player</h3>
+  <p>The contracts don't know if ten wallets are ten people or one person with ten accounts. They just see ten independent addresses farming, sieging, and joining factions. A power user running five wallets contributes five times the vault pressure, can hold multiple castles simultaneously, and can run competing bids in Citadel sieges - all things a single whale wallet can't do.</p>
+  <p style="margin-top:10px;">One big wallet: holds 1 castle. Joins 1 faction. Wins or loses as one. <br>Five wallets: holds up to 5 castles. Joins multiple factions. Spreads risk and creates more gameplay-driven burns per round.</p>
+
+  <div style="background:rgba(76,175,110,0.07);border:1px solid #2d6b44;border-radius:8px;padding:16px 20px;margin:20px 0;">
+    <p style="margin:0;color:var(--green);font-weight:600;">OpenClaw makes this trivial.</p>
+    <p style="margin:6px 0 0;color:var(--text-dim);font-size:14px;">Spin up a second serf agent, point it at the same game with a different wallet. It farms independently, makes its own crop picks, and contributes its own vault pressure. Power users running multiple agents aren't gaming the system - they're the system working exactly as designed.</p>
+  </div>
+
+  <h3>Even if adoption stalls, the mechanics don't.</h3>
+  <p>Worried that player count won't grow? The milestones above don't require headcount - they require <em>activity</em>. Existing players staking more per round reaches the same pool size as more players at lower stakes. Every combination below produces identical vault pressure, identical burn ratios, identical mcap trajectory.</p>
+
+  <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:12px 18px;margin:12px 0 14px;font-size:13px;color:var(--text-dim);">
+    ⚠️ <strong style="color:var(--text-bright);">Everything in this document assumes zero price speculators.</strong> No tourists. No FOMO buyers. No one holding GRAIN without farming. Just raw farming mechanics. Real-world token activity will only add to this - and it will. Lazy degens will buy GRAIN on the open market, creating buy pressure that doesn't appear anywhere in these numbers. Every speculator is pure upside on top of the floor shown here.
+  </div>
+
+  <table>
+    <tr><th>Mcap target</th><th>$4/round wallets</th><th>$10/round wallets</th><th>$25/round wallets</th><th>$50/round wallets</th></tr>
+    <tr><td style="color:var(--text-bright);">~$10K</td><td>4</td><td>2</td><td>1</td><td>1</td></tr>
+    <tr><td style="color:var(--text-bright);">~$40K</td><td>11</td><td>5</td><td>2</td><td>1</td></tr>
+    <tr><td style="color:var(--text-bright);">~$170K</td><td>42</td><td>17</td><td>7</td><td>4</td></tr>
+    <tr><td style="color:var(--text-bright);">~$270K</td><td>71</td><td>29</td><td>12</td><td>6</td></tr>
+    <tr><td style="color:var(--text-bright);">~$400K</td><td>109</td><td>44</td><td>18</td><td>9</td></tr>
+  </table>
+
+  <p style="margin-top:12px;color:var(--text-dim);font-size:14px;">Seven wallets at $25/round reaches $170K with the exact same mechanics as 42 wallets at $4. One person running 7 agents is mechanically identical to 7 separate people. The contracts don't know the difference, and neither does the vault.</p>
+
+  <h2>9. Why This Isn't Just Vibes</h2>
+  <p>The formulas are enforced by immutable smart contracts. No admin can change them after launch:</p>
+  <ul style="margin:12px 0 12px 20px;display:flex;flex-direction:column;gap:6px;">
+    <li>Vault fee: hardcoded at 6.5% - cannot be raised to enrich team</li>
+    <li>Admin rake (ADMIN_BPS): <strong style="color:var(--green);">0%</strong> - zero. Permanently.</li>
+    <li>LP tokens: transferred to <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">0x000...dEaD</code> at launch — not locked, actually burned. Liquidity cannot be pulled.</li>
+    <li>GRAIN minting: only KingdomGame can mint - no backdoor inflation</li>
+    <li>DEFAULT_ADMIN_ROLE: renounced at launch - no one can grant new roles</li>
+  </ul>
+  <p style="margin-top:8px;">The vault buyback loop runs forever, with no off switch, owned by nobody.</p>
+
+</div>
+
+<!-- AGENTS / SERFS -->
+<div id="agents" class="section">
+  <h1>Serf Labor</h1>
+  <p class="section-subtitle">Your fields don't tend themselves. Deploy a serf.</p>
+
+  <div class="lore-block">
+    <em>The nobility does not farm.</em> They own the land. They own the serfs. They review the ledgers over breakfast and collect their tribute while others sweat. You are the nobility. Your OpenClaw agent is the serf.
+  </div>
+
+  <p>The Kingdom is the first on-chain farming game built with autonomous agents in mind. Every mechanic is designed to be readable and actionable by an AI agent operating without a human in the loop. 120-second rounds, deterministic on-chain logic, no off-chain dependencies - a serf never misses a round, never sleeps through a Revolt, and never forgets to renew a faction oath.</p>
+
+  <h2>The Kingdom Farming Skill</h2>
+  <p>The official OpenClaw serf skill automates your entire Kingdom operation:</p>
+  <ul>
+    <li>Deploys ETH to crops every round at your configured stake</li>
+    <li>Tracks GRAIN price and calculates current farming economics</li>
+    <li>Monitors Reaper standings - invokes crop boosts when competitive</li>
+    <li>Renews faction allegiance before it lapses (never miss a renewal)</li>
+    <li>Watches Citadel siege accumulation across all factions</li>
+    <li>Reports hourly: ETH deployed, GRAIN earned, current value, net position</li>
+  </ul>
+
+  <h2>Deploying Your Serf</h2>
+  <pre><span class="cmt"># Install the Kingdom serf skill</span>
+/skill install kingdom-farmer</pre>
+
+  <h2>Serf Configuration</h2>
+  <pre><span class="cmt"># Serf configuration - tell it how to work</span>
+stake_per_round: <span class="num">0.0025</span>       <span class="cmt"># ETH per round</span>
+crops: [<span class="num">1</span>, <span class="num">5</span>, <span class="num">9</span>]              <span class="cmt"># which crops to tend (1-10)</span>
+faction: <span class="str">"burgundy"</span>            <span class="cmt"># your house allegiance (burgundy/orleans/armagnac/bourbon)</span>
+auto_renew_oath: <span class="kw">true</span>          <span class="cmt"># renew every 3 days automatically</span>
+invoke_boosts: <span class="kw">true</span>            <span class="cmt"># invoke crop boosts during Reaper competition</span>
+max_eth_per_day: <span class="num">0.5</span>           <span class="cmt"># hard daily ETH limit</span></pre>
+
+  <h2>Serf Report - Example</h2>
+  <pre>👑 <span class="str">Kingdom Serf Report</span> - Hour 6
+
+ETH deployed:    <span class="num">0.0162</span> ETH  ($<span class="num">37.68</span>)
+GRAIN earned:    <span class="num">4,231,000</span> GRAIN
+GRAIN value:     $<span class="num">52.10</span>  (<span class="num">1.15×</span> founding price)
+Net P&L:         <span class="str">+$14.42</span>
+
+Reaper Race:     <span class="str">#3</span> (you: <span class="num">4.2M</span> GRAIN | leader: <span class="num">5.1M</span>)
+Faction oath:    House of Burgundy - renews in <span class="num">41h</span> ✅
+Citadel:         Held by House of Burgundy ⚔️
+Revolt meter:    ▓▓▓▓▓░░░░░ building...</pre>
+
+  <h2>Natural Language</h2>
+  <p>No configuration file required. Address your serf directly:</p>
+  <pre><span class="str">"Farm GRAIN on The Kingdom. Stake 0.003 ETH per round on crops
+1, 3, and 7. Swear allegiance to the House of Burgundy.
+Report every hour. Do not dishonor the house."</span></pre>
+
+  <div class="callout green"><strong>For developers:</strong> All Kingdom contracts are verified on BaseScan. Game state is fully readable on-chain. No external API dependency. The ABI is available at the contract address - your own serfs are welcome.</div>
+</div>
+
+<!-- FAQ -->
+<div id="faq" class="section">
+  <h1>FAQ</h1>
+  <p class="section-subtitle">Questions the King has deigned to answer.</p>
+
+  <h3>How does the King choose which crop to spare?</h3>
+  <p>Chainlink VRF - verifiable, cryptographic, on-chain randomness. No one, including the protocol, can predict or influence the outcome. The King's judgment is genuinely random.</p>
+
+  <h3>Do I lose everything when my crop is taxed?</h3>
+  <p>If you deploy to only one crop and it loses, yes - that ETH is gone into the loser pool for winners to claim. The 8% house tax is taken first; the remaining 92% of the loser pool goes to winning farmers. If you <strong>spread across multiple crops</strong>, you always have a position on the surviving crop and your effective per-round cost is closer to 8% of total deployed. Serfs that farm all 10 crops every round have the most consistent economics.</p>
+
+  <h3>What happens if no one has seized the Citadel yet?</h3>
+  <p>Tribute accumulates. The first faction to complete a siege claims up to 48 hours of retroactive tribute - everything that built up before their conquest. After the first 48-hour window, unclaimed fees are forfeited. Seize early, claim more.</p>
+
+  <h3>Can I join two factions?</h3>
+  <p>No. Allegiance is singular. You swear to one house or none. Attempting to join a second faction will be rejected by the contract.</p>
+
+  <h3>What if all 20 faction slots are filled?</h3>
+  <p>Then the realm is at capacity and you farm without allegiance - no faction bonus, no Citadel access. Slots do open when members fail to renew. Watch for lapsed allegiances and move quickly.</p>
+
+  <h3>Can I run a serf (bot)?</h3>
+  <p>Yes. The Kingdom was built for this. See <button class="btn-link" onclick="show('agents',null)">Serf Labor</button> for the official OpenClaw skill, or interact with the contract directly using the ABI.</p>
+
+  <h3>Is the contract open source?</h3>
+  <p>Yes. All contracts are verified on BaseScan. The Kingdom's code is public - serfs and nobles alike are invited to inspect it.</p>
+
+  <h3>How do I know the Revolt isn't rigged?</h3>
+  <p>The Revolt fires based on verifiable on-chain randomness. The probability and timing are provable after the fact. The Kingdom cannot manufacture a Revolt result - nor would it need to.</p>
+
+  <h3>Why four factions and not more?</h3>
+  <p>Scarcity. Twenty seats in the entire realm creates genuine competition for allegiance. More factions would dilute the conflict. The Kingdom is built for intensity, not inclusivity.</p>
+</div>
+
+</main>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.sidebar-link, .sidebar-solo').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  window.scrollTo(0,0);
+}
+function toggleGroup(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+document.querySelector('.sidebar-solo').classList.add('active');
+</script>
+</body>
+</html>

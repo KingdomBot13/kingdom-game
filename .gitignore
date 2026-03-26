@@ -1,0 +1,21 @@
+# Exclude all ui-assets except what game.html actually loads
+ui-assets/*
+!ui-assets/farm-art/
+ui-assets/farm-art/*
+!ui-assets/farm-art/growing-crops/
+
+!ui-assets/grass-art/
+ui-assets/grass-art/*
+!ui-assets/grass-art/grass-plus/
+
+!ui-assets/misc-art/
+ui-assets/misc-art/*
+!ui-assets/misc-art/lpc-cliff-final/
+!ui-assets/misc-art/bg-pixel-mountains.png
+!ui-assets/misc-art/wood-bark2.jpg
+!ui-assets/misc-art/wood-mahogany.jpg
+!ui-assets/misc-art/wood-real-photo.jpg
+!ui-assets/misc-art/wood-siding1.jpg
+
+# Never publish
+checkpoint.html
